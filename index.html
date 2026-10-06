@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>lebonmodel | Le bon modèle d'IA pour chaque tâche</title>
+<meta name="description" content="Dites ce que vous voulez faire : lebonmodel compare les modèles d'OpenAI et d'Anthropic sur cette tâche précise, selon l'abonnement que vous avez. Un outil Numenys.">
+<meta name="author" content="Numenys, Thibaut Picard Destelan">
+<link rel="canonical" href="https://lebonmodel.numenys.fr/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="lebonmodel par Numenys">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:url" content="https://lebonmodel.numenys.fr/">
+<meta property="og:title" content="lebonmodel : le bon modèle d'IA pour chaque tâche">
+<meta property="og:description" content="Choisissez une tâche, comparez les modèles d'OpenAI et d'Anthropic sur cette tâche, filtrez selon votre abonnement.">
+<meta property="og:image" content="https://lebonmodel.numenys.fr/og-lebonmodel.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="lebonmodel : le bon modèle d'IA pour chaque tâche">
+<meta name="twitter:description" content="Comparez les modèles d'OpenAI et d'Anthropic sur la tâche que vous voulez faire.">
+<meta name="twitter:image" content="https://lebonmodel.numenys.fr/og-lebonmodel.png">
+<meta name="theme-color" content="#14161a">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Raleway:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script>
+  (function () {
+    try {
+      var t = localStorage.getItem("lbm-theme");
+      if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+    } catch (e) {}
+  })();
+</script>
+</head>
+<body>
+<!--PAGE-START-->
+<a class="skip" href="#resultat">Aller au résultat</a>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="./" aria-label="lebonmodel, accueil">
+      <span class="wordmark">le<b>bon</b>model</span>
+    </a>
+    <a class="by" href="https://numenys.fr" aria-label="Un outil Numenys">
+      <svg class="cube" viewBox="0 0 64 64" aria-hidden="true">
+        <g fill="none" stroke="currentColor" stroke-linecap="round">
+          <g stroke-width="1.8" opacity=".35"><path d="M8 13h37M8 13v28M45 13v28M8 41h37"/></g>
+          <g stroke-width="1.8" opacity=".55"><path d="M8 13l11 11M45 13l11 11M45 41l11 11M8 41l11 11"/></g>
+          <rect x="19" y="24" width="37" height="28" stroke-width="2.6"/>
+        </g>
+        <g fill="currentColor"><circle cx="19" cy="24" r="3.4"/><circle cx="56" cy="24" r="3.4"/><circle cx="56" cy="52" r="3.4"/><circle cx="19" cy="52" r="3.4"/></g>
+      </svg>
+      <span>par Numenys</span>
+    </a>
+    <nav class="site-nav" aria-label="Pages">
+      <a href="./" aria-current="page">Choisir un modèle</a>
+      <a href="budget/">Estimer un budget</a>
+      <a href="#methode">Méthode</a>
+    </nav>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Passer en thème clair">
+      <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>
+      <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 14.6A8 8 0 0 1 9.4 4.5a8 8 0 1 0 10.1 10.1Z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main>
+  <section class="hero wrap" aria-labelledby="titre">
+    <h1 id="titre">Le bon modèle d'IA pour chaque tâche.</h1>
+    <p class="lede">Dites ce que vous voulez faire. lebonmodel compare les modèles d'OpenAI et d'Anthropic sur cette tâche précise, avec l'abonnement que vous avez déjà.</p>
+
+    <div class="search" role="search">
+      <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5l5 5"/></svg>
+      <label class="sr-only" for="q">Que voulez-vous faire&#8239;?</label>
+      <input id="q" type="search" placeholder="Que voulez-vous faire ? Par exemple : relire un contrat" autocomplete="off" spellcheck="false"
+        role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="suggest">
+      <ul class="suggest" id="suggest" role="listbox" aria-label="Tâches proposées" hidden></ul>
+    </div>
+
+    <div class="picker">
+      <div class="cats" id="cats" role="tablist" aria-label="Familles de tâches"></div>
+      <div class="tasks" id="tasks" role="radiogroup" aria-label="Tâches"></div>
+    </div>
+  </section>
+
+  <section class="result" id="resultat" aria-labelledby="task-title">
+    <div class="wrap">
+      <div class="result-head">
+        <div class="result-title">
+          <h2 id="task-title">&nbsp;</h2>
+          <p class="need" id="need-line">&nbsp;</p>
+        </div>
+        <form class="settings" id="settings" autocomplete="off">
+          <div class="setting">
+            <label for="sel-openai"><span class="mark openai" aria-hidden="true"></span>Votre ChatGPT</label>
+            <span class="select"><select id="sel-openai"></select></span>
+          </div>
+          <div class="setting">
+            <label for="sel-anthropic"><span class="mark anthropic" aria-hidden="true"></span>Votre Claude</label>
+            <span class="select"><select id="sel-anthropic"></select></span>
+          </div>
+          <div class="setting-switch">
+            <label class="switch" for="chat-only">
+              <input type="checkbox" id="chat-only">
+              <span class="switch-track" aria-hidden="true"></span>
+              Conversation uniquement
+            </label>
+          </div>
+          <fieldset class="setting">
+            <legend>Votre exigence</legend>
+            <div class="segmented" id="exigence">
+              <label><input class="sr-only" type="radio" name="exig" value="-1" id="exig-low"><span>Premier jet</span></label>
+              <label><input class="sr-only" type="radio" name="exig" value="0" id="exig-mid" checked><span>Fiable</span></label>
+              <label><input class="sr-only" type="radio" name="exig" value="1" id="exig-high"><span>Sans faute</span></label>
+            </div>
+          </fieldset>
+        </form>
+      </div>
+
+      <p class="api-note" id="api-note" hidden></p>
+
+      <div class="picks-head">
+        <h3>Le plus adapté chez chaque éditeur</h3>
+        <div class="currency" role="group" aria-label="Devise">
+          <button type="button" data-cur="EUR" aria-pressed="true">€</button>
+          <button type="button" data-cur="USD" aria-pressed="false">$</button>
+        </div>
+      </div>
+      <div class="picks" id="picks" aria-live="polite"></div>
+
+      <figure class="map" id="map" aria-labelledby="map-title">
+        <figcaption class="map-head">
+          <h3 id="map-title">Niveau et coût sur cette tâche</h3>
+          <p id="map-sub">100 = le meilleur modèle actuel sur cette tâche. Chaque point est un modèle, à son réglage le plus adapté.</p>
+        </figcaption>
+        <ul class="legend-row" aria-label="Légende">
+          <li><svg viewBox="0 0 14 14" aria-hidden="true"><circle class="mk-openai" cx="7" cy="7" r="5.5"/></svg>OpenAI</li>
+          <li><svg viewBox="0 0 14 14" aria-hidden="true"><rect class="mk-anthropic" x="1.5" y="1.5" width="11" height="11" rx="2.5"/></svg>Anthropic</li>
+          <li><svg viewBox="0 0 14 14" aria-hidden="true"><path class="mk-threshold" d="M7 0v14"/></svg>Niveau requis</li>
+          <li><svg viewBox="0 0 14 14" aria-hidden="true"><circle class="mk-dim" cx="7" cy="7" r="5.5"/></svg>Hors de vos abonnements</li>
+        </ul>
+        <div class="chart" id="chart"></div>
+        <div class="map-foot">
+          <label class="switch" for="show-all">
+            <input type="checkbox" id="show-all">
+            <span class="switch-track" aria-hidden="true"></span>
+            Voir tous les niveaux d'effort
+          </label>
+          <p class="axis-note">Coût d'une tâche en API, échelle logarithmique</p>
+        </div>
+      </figure>
+
+      <section class="ranking" aria-labelledby="ranking-title">
+        <div class="ranking-head">
+          <div>
+            <h3 id="ranking-title">Le classement pour cette tâche</h3>
+            <p id="ranking-sub">Ouvrez une ligne pour voir les scores qui comptent ici.</p>
+          </div>
+          <div class="segmented small" id="sort" role="radiogroup" aria-label="Trier par">
+            <label><input class="sr-only" type="radio" name="sort" value="fit" id="sort-fit" checked><span>Le plus adapté</span></label>
+            <label><input class="sr-only" type="radio" name="sort" value="best" id="sort-best"><span>Le plus capable</span></label>
+          </div>
+        </div>
+        <ol class="ranking-list" id="ranking"></ol>
+      </section>
+
+      <section class="tiers" id="formules" aria-labelledby="tiers-title">
+        <h3 id="tiers-title">Ce que chaque formule vous donne pour cette tâche</h3>
+        <p class="tiers-sub">À prix comparable, le meilleur niveau atteignable dans chaque offre, et ce que les éditeurs publient sur les volumes. Ni OpenAI ni Anthropic ne publient de quota en tokens.</p>
+        <div class="tier-table" id="tiers" role="table" aria-labelledby="tiers-title"></div>
+      </section>
+    </div>
+  </section>
+
+  <section class="method" id="methode" aria-labelledby="methode-titre">
+    <div class="wrap">
+      <h2 id="methode-titre">Comment lebonmodel compare</h2>
+      <div class="method-grid">
+        <div>
+          <h3>Une note par tâche</h3>
+          <p>Chaque tâche s'appuie sur les évaluations d'Artificial Analysis qui la mesurent le mieux&nbsp;: lecture de longs PDF pour interroger un document, Terminal-Bench pour coder, indice juridique pour un contrat. Chaque modèle est noté à chaque niveau d'effort, puis comparé au meilleur&nbsp;: 100 correspond au meilleur modèle actuel sur cette tâche.</p>
+        </div>
+        <div>
+          <h3>Des niveaux en métiers</h3>
+          <p>Référence à partir de 93 % du meilleur score, Senior à 82 %, Confirmé à 68 %, Junior à 50 %. Chaque famille de tâches a son échelle de métiers&nbsp;: de stagiaire juridique à associé pour un contrat, de stagiaire développeur à architecte pour le code. C'est une analogie pour se repérer, pas une mesure de la valeur d'un métier.</p>
+        </div>
+        <div>
+          <h3>Le coût d'une tâche</h3>
+          <p>Quand une évaluation ressemble à la tâche, nous reprenons le coût réellement mesuré par Artificial Analysis pour chaque modèle, réflexion comprise. Sinon, nous comptons les tokens lus et écrits au prix de l'API. Dans un abonnement, ce coût indique à quelle vitesse la tâche entame votre quota.</p>
+        </div>
+        <div>
+          <h3>Les abonnements</h3>
+          <p>Pour chaque offre, nous ne retenons que les réglages réellement proposés dans ChatGPT, ChatGPT Work, Codex, l'appli Claude et Claude Code, ainsi que la taille des documents acceptée. Si vous n'avez que la conversation, comme dans beaucoup d'entreprises, cochez «&nbsp;Conversation uniquement&nbsp;». Les volumes viennent des pages d'aide des éditeurs, qui ne les publient jamais en tokens.</p>
+        </div>
+        <div>
+          <h3>Les limites</h3>
+          <p>Aucune évaluation récente ne mesure la qualité en français. Le mode Pro de ChatGPT n'est pas évalué&nbsp;: nous le montrons comme GPT-6 Astra au maximum. Le mode Think des offres gratuites, qui repose sur GPT-5.6 Luna, est compté avec un effort moyen. Pour GPT-5.6 Sol en mode Instant et Claude Haiku 4.5 sans réflexion, quelques scores sont estimés à partir du même modèle. Les modèles à accès restreint ou à héberger soi-même ne sont pas comparés.</p>
+        </div>
+        <div>
+          <h3>Mise à jour</h3>
+          <p>Données du <span id="updated">6 octobre 2026</span>. Les modèles changent vite&nbsp;: un essai sur vos propres documents reste le meilleur arbitre. Pour un budget mensuel selon votre volume, voyez la page <a href="budget/">Estimer un budget</a>.</p>
+        </div>
+      </div>
+      <div class="sources">
+        <h3>Sources</h3>
+        <ul id="sources"></ul>
+        <p class="fx-note" id="fx-note"></p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <div class="footer-brand">
+      <p class="wordmark small">le<b>bon</b>model</p>
+      <p>Un outil de Numenys, conseil Data et IA pour les directions générales et financières.</p>
+    </div>
+    <ul class="footer-links">
+      <li><a href="https://numenys.fr">numenys.fr</a></li>
+      <li><a href="https://www.linkedin.com/in/thibaut-picard-destelan">Thibaut Picard Destelan sur LinkedIn</a></li>
+      <li><a href="https://github.com/thibpic/lebonmodel">Code et données sur GitHub</a></li>
+    </ul>
+    <p class="fine">Outil indépendant, sans lien commercial avec OpenAI ni Anthropic. Les noms des modèles appartiennent à leurs éditeurs. Estimations indicatives.</p>
+  </div>
+</footer>
+<noscript><p class="noscript">lebonmodel a besoin de JavaScript pour comparer les modèles.</p></noscript>
+<!--PAGE-END-->
+<script src="assets/models.js"></script>
+<script src="assets/tasks.js"></script>
+<script src="assets/plans.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>

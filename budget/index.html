@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Estimer un budget IA | lebonmodel</title>
+<meta name="description" content="Combien va vous coûter l'IA ? Estimez votre budget mensuel selon votre usage et votre volume, abonnement ou API, chez OpenAI et Anthropic.">
+<meta name="author" content="Numenys, Thibaut Picard Destelan">
+<link rel="canonical" href="https://lebonmodel.numenys.fr/budget/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="lebonmodel par Numenys">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:url" content="https://lebonmodel.numenys.fr/budget/">
+<meta property="og:title" content="Estimer un budget IA, par lebonmodel">
+<meta property="og:description" content="Estimez votre budget mensuel selon votre usage, en abonnement ou en API.">
+<meta property="og:image" content="https://lebonmodel.numenys.fr/og-lebonmodel.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Estimer un budget IA, par lebonmodel">
+<meta name="twitter:description" content="Comparez en direct l'intelligence et le coût des modèles OpenAI et Anthropic pour votre usage.">
+<meta name="twitter:image" content="https://lebonmodel.numenys.fr/og-lebonmodel.png">
+<meta name="theme-color" content="#14161a">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Raleway:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="budget.css">
+<script>
+  (function () {
+    try {
+      var t = localStorage.getItem("lbm-theme");
+      if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+    } catch (e) {}
+  })();
+</script>
+</head>
+<body>
+<!--PAGE-START-->
+<a class="skip" href="#outil">Aller au comparateur</a>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand lbm-brand" href="../" aria-label="lebonmodel, accueil">
+      <span class="wordmark">le<b>bon</b>model</span>
+    </a>
+    <a class="by" href="https://numenys.fr" aria-label="Un outil Numenys">
+      <svg class="cube" viewBox="0 0 64 64" aria-hidden="true">
+        <g fill="none" stroke="currentColor" stroke-linecap="round">
+          <g stroke-width="1.8" opacity=".35"><path d="M8 13h37M8 13v28M45 13v28M8 41h37"/></g>
+          <g stroke-width="1.8" opacity=".55"><path d="M8 13l11 11M45 13l11 11M45 41l11 11M8 41l11 11"/></g>
+          <rect x="19" y="24" width="37" height="28" stroke-width="2.6"/>
+        </g>
+        <g fill="currentColor"><circle cx="19" cy="24" r="3.4"/><circle cx="56" cy="24" r="3.4"/><circle cx="56" cy="52" r="3.4"/><circle cx="19" cy="52" r="3.4"/></g>
+      </svg>
+      <span>par Numenys</span>
+    </a>
+    <nav class="site-nav" aria-label="Pages">
+      <a href="../">Choisir un modèle</a>
+      <a href="./" aria-current="page">Estimer un budget</a>
+      <a href="#methode">Méthode</a>
+    </nav>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Passer en thème clair">
+      <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>
+      <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 14.6A8 8 0 0 1 9.4 4.5a8 8 0 1 0 10.1 10.1Z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="contenu">
+  <section class="hero wrap" aria-labelledby="titre">
+    <h1 id="titre">Combien va vous coûter l'IA&#8239;?</h1>
+    <p class="lede">Indiquez votre usage et votre volume. On estime ce que coûterait chaque modèle d'OpenAI et d'Anthropic chaque mois, et quel abonnement suffit. Pour choisir un modèle tâche par tâche, voyez <a href="../">la page principale</a>.</p>
+    <p class="stamp">Prix et scores vérifiés le <span id="updated">6 octobre 2026</span></p>
+  </section>
+
+  <section class="tool wrap" id="outil" aria-label="Comparateur">
+    <form class="controls" id="controls" autocomplete="off">
+      <fieldset class="field">
+        <legend class="legend">Vous êtes</legend>
+        <div class="profiles" id="profiles"></div>
+      </fieldset>
+
+      <fieldset class="field">
+        <legend class="legend">Pour faire quoi</legend>
+        <div class="usages" id="usages"></div>
+        <button class="text-btn" id="all-usages" type="button" aria-expanded="false">Voir les 18 usages</button>
+      </fieldset>
+
+      <div class="field">
+        <label class="legend" for="volume">À quel rythme</label>
+        <input class="range" type="range" id="volume" min="0" max="1000" step="1" value="260" aria-describedby="volume-human">
+        <p class="readout"><strong class="num" id="volume-value">20 documents par mois</strong> <span id="volume-human">soit environ un par jour ouvré</span></p>
+      </div>
+
+      <fieldset class="field">
+        <legend class="legend">Votre exigence</legend>
+        <div class="segmented three" id="exigence">
+          <label><input class="sr-only" type="radio" name="exig" value="-1" id="exig-low"><span>Un premier jet</span></label>
+          <label><input class="sr-only" type="radio" name="exig" value="0" id="exig-mid" checked><span>Fiable</span></label>
+          <label><input class="sr-only" type="radio" name="exig" value="1" id="exig-high"><span>Sans faute</span></label>
+        </div>
+        <p class="note" id="exig-note">Le niveau attendu d'un professionnel qui connaît le sujet.</p>
+      </fieldset>
+
+      <fieldset class="field">
+        <legend class="legend">Comment vous y accédez</legend>
+        <div class="segmented two" id="access">
+          <label><input class="sr-only" type="radio" name="access" value="app" id="access-app" checked><span>Dans l'appli<small>avec un abonnement</small></span></label>
+          <label><input class="sr-only" type="radio" name="access" value="api" id="access-api"><span>Par l'API<small>payé à l'usage</small></span></label>
+        </div>
+        <p class="note" id="access-note"></p>
+      </fieldset>
+    </form>
+
+    <div class="results" id="results">
+      <div class="results-head">
+        <h2 class="results-title" id="reco-title">Le plus adapté chez chaque éditeur</h2>
+        <div class="currency" role="group" aria-label="Devise d'affichage">
+          <button type="button" data-cur="EUR" aria-pressed="true">€</button>
+          <button type="button" data-cur="USD" aria-pressed="false">$</button>
+        </div>
+      </div>
+
+      <div class="duo" id="duo" aria-live="polite"></div>
+
+      <figure class="map" id="map" aria-labelledby="map-title">
+        <figcaption class="map-head">
+          <h3 id="map-title">Intelligence et coût pour votre usage</h3>
+          <p id="map-sub">Chaque point est un modèle, à son réglage le plus économique qui atteint votre niveau.</p>
+        </figcaption>
+        <ul class="legend-row" aria-label="Légende">
+          <li><svg viewBox="0 0 14 14" aria-hidden="true"><circle class="mk-openai" cx="7" cy="7" r="5.5"/></svg>OpenAI</li>
+          <li><svg viewBox="0 0 14 14" aria-hidden="true"><rect class="mk-anthropic" x="1.5" y="1.5" width="11" height="11" rx="2.5"/></svg>Anthropic</li>
+          <li><svg viewBox="0 0 14 14" aria-hidden="true"><path class="mk-threshold" d="M7 0v14"/></svg>Votre seuil</li>
+          <li><svg viewBox="0 0 14 14" aria-hidden="true"><circle class="mk-halo" cx="7" cy="7" r="5.5"/></svg>Le plus adapté par éditeur</li>
+        </ul>
+        <div class="chart" id="chart"></div>
+        <div class="map-foot">
+          <label class="switch" for="show-all">
+            <input type="checkbox" id="show-all">
+            <span class="switch-track" aria-hidden="true"></span>
+            Afficher tous les niveaux d'effort
+          </label>
+          <p class="axis-note">Coût en échelle logarithmique</p>
+        </div>
+      </figure>
+
+      <section class="ranking" aria-labelledby="ranking-title">
+        <div class="ranking-head">
+          <h3 id="ranking-title">Les dix modèles pour cet usage</h3>
+          <p>Du moins cher au plus cher parmi ceux qui atteignent votre niveau. Touchez une ligne pour le détail.</p>
+        </div>
+        <ol class="ranking-list" id="ranking"></ol>
+      </section>
+    </div>
+  </section>
+
+  <section class="ladder" id="echelle" aria-labelledby="echelle-titre">
+    <div class="wrap">
+      <h2 id="echelle-titre">Cinq profils pour lire l'intelligence d'un modèle</h2>
+      <p class="section-lede">L'Intelligence Index d'Artificial Analysis note chaque modèle sur dix évaluations exigeantes&nbsp;: raisonnement, connaissances, code, travail en autonomie. Nous l'avons traduit en profils de poste. C'est une analogie pour s'y retrouver, pas une mesure de la valeur d'un métier.</p>
+      <ol class="steps" id="steps"></ol>
+    </div>
+  </section>
+
+  <section class="method wrap" id="methode" aria-labelledby="methode-titre">
+    <h2 id="methode-titre">Comment ce budget est calculé</h2>
+    <div class="method-grid">
+      <div>
+        <h3>L'intelligence</h3>
+        <p>Nous utilisons l'Intelligence Index v4.3.2 d'Artificial Analysis, mesuré pour chaque modèle et chaque niveau d'effort. Un même modèle change de profil selon l'effort de réflexion qu'on lui demande&nbsp;: Claude Opus 5.5 passe de Confirmé à Pointe.</p>
+      </div>
+      <div>
+        <h3>Le coût d'un usage</h3>
+        <p>Pour les usages de conversation, nous estimons les tokens lus et écrits, puis la réflexion propre à chaque modèle, d'après les volumes mesurés par Artificial Analysis. Pour les usages en agent, nous partons du coût réel mesuré par tâche. Les modèles Claude récents comptent environ 30&nbsp;% de tokens en plus pour un même texte&nbsp;: c'est intégré.</p>
+      </div>
+      <div>
+        <h3>Les abonnements</h3>
+        <p>Pour chaque offre, nous regardons les réglages réellement accessibles dans l'application, puis nous comparons votre usage à son coût en API pour signaler un risque de plafond. Ni OpenAI ni Anthropic ne publient leurs quotas en tokens&nbsp;: ce repère est une estimation de Numenys, pas une donnée des éditeurs.</p>
+      </div>
+      <div>
+        <h3>Ce que l'outil ne dit pas</h3>
+        <p>Un indice ne remplace pas un essai sur vos propres documents. Les prix évoluent vite, les coûts réels dépendent de la longueur de vos échanges, et les modèles à accès restreint (Claude Mythos 5.1, GPT-5.6 Cyber, GPT-Rosalind) ou à héberger soi-même (gpt-oss) ne sont pas comparés.</p>
+      </div>
+    </div>
+    <div class="sources">
+      <h3>Sources</h3>
+      <ul id="sources"></ul>
+      <p class="fx-note" id="fx-note"></p>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <div class="footer-brand">
+      <p class="wordmark small">le<b>bon</b>model</p>
+      <p>Numenys aide les directions générales et financières à décider avec leurs données et à déployer l'IA avec les bons outils.</p>
+    </div>
+    <ul class="footer-links">
+      <li><a href="https://numenys.fr">numenys.fr</a></li>
+      <li><a href="https://www.linkedin.com/in/thibaut-picard-destelan">Thibaut Picard Destelan sur LinkedIn</a></li>
+      <li><a href="https://github.com/thibpic/lebonmodel">Code et données sur GitHub</a></li>
+    </ul>
+    <p class="fine">Outil indépendant, sans lien commercial avec OpenAI ni Anthropic. Les noms des modèles appartiennent à leurs éditeurs. Estimations indicatives, hors TVA pour l'API.</p>
+  </div>
+</footer>
+
+
+
+<noscript><p class="noscript">Cette page a besoin de JavaScript pour calculer les estimations.</p></noscript>
+<!--PAGE-END-->
+<script src="budget-data.js"></script>
+<script src="budget-app.js"></script>
+</body>
+</html>
