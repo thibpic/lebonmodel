@@ -327,49 +327,6 @@
     }).join("");
   }
 
-  function norm(s) { return String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); }
-  function searchTasks(q) {
-    var words = norm(q).split(/[^a-z0-9]+/).filter(function (w) { return w.length > 1; });
-    if (!words.length) return [];
-    return TASKS.map(function (t) {
-      var label = norm(t.label), hay = norm(t.label + " " + t.hint + " " + t.kw), toks = hay.split(/[^a-z0-9]+/), sc = 0;
-      words.forEach(function (w) {
-        if (label.indexOf(w) >= 0) sc += 3;
-        else if (hay.indexOf(w) >= 0) sc += 1.5;
-        else {
-          var stem = w.slice(0, Math.max(3, w.length - 2));
-          if (toks.some(function (k) { return k.indexOf(stem) === 0; })) sc += 0.6;
-        }
-      });
-      return { t: t, sc: sc };
-    }).filter(function (x) { return x.sc > 0; }).sort(function (a, b) { return b.sc - a.sc; }).slice(0, 6);
-  }
-  var sugg = { items: [], idx: -1 };
-  function renderSuggest(q) {
-    var box = $("#suggest"), input = $("#q");
-    if (!q.trim()) { box.hidden = true; input.setAttribute("aria-expanded", "false"); return; }
-    sugg.items = searchTasks(q);
-    sugg.idx = sugg.items.length ? 0 : -1;
-    if (!sugg.items.length) {
-      box.innerHTML = '<li class="s-empty" role="option" aria-disabled="true">Aucune tâche ne correspond. Essayez un verbe : rédiger, analyser, coder…</li>';
-    } else {
-      box.innerHTML = sugg.items.map(function (x, i) {
-        var catLabel = CATS.filter(function (c) { return c.id === x.t.cat; })[0].label;
-        return '<li role="option" id="sg-' + i + '" data-task="' + x.t.id + '" aria-selected="' + (i === sugg.idx) + '"><span class="s-label">' + esc(x.t.label) + '</span><span class="s-hint">' + esc(catLabel + ", " + x.t.hint.charAt(0).toLowerCase() + x.t.hint.slice(1)) + "</span></li>";
-      }).join("");
-    }
-    box.hidden = false;
-    input.setAttribute("aria-expanded", "true");
-    input.setAttribute("aria-activedescendant", sugg.idx >= 0 ? "sg-" + sugg.idx : "");
-  }
-  function moveSuggest(d) {
-    if (!sugg.items.length) return;
-    sugg.idx = (sugg.idx + d + sugg.items.length) % sugg.items.length;
-    $$("#suggest li").forEach(function (li, i) { li.setAttribute("aria-selected", i === sugg.idx ? "true" : "false"); });
-    $("#q").setAttribute("aria-activedescendant", "sg-" + sugg.idx);
-  }
-  function closeSuggest() { $("#suggest").hidden = true; $("#q").setAttribute("aria-expanded", "false"); }
-
   function selectTask(id, scroll) {
     state.task = id;
     state.cat = taskById[id].cat;
@@ -843,23 +800,6 @@
       var b = e.target.closest(".task"); if (!b) return;
       selectTask(b.getAttribute("data-task"), window.innerWidth < 760);
     });
-    var q = $("#q");
-    q.addEventListener("input", function () { renderSuggest(q.value); });
-    q.addEventListener("focus", function () { if (q.value.trim()) renderSuggest(q.value); });
-    q.addEventListener("keydown", function (e) {
-      if (e.key === "ArrowDown") { e.preventDefault(); if ($("#suggest").hidden) renderSuggest(q.value); else moveSuggest(1); }
-      else if (e.key === "ArrowUp") { e.preventDefault(); moveSuggest(-1); }
-      else if (e.key === "Enter") {
-        e.preventDefault();
-        if (sugg.idx >= 0 && sugg.items[sugg.idx]) { selectTask(sugg.items[sugg.idx].t.id, true); closeSuggest(); q.blur(); }
-      } else if (e.key === "Escape") closeSuggest();
-    });
-    $("#suggest").addEventListener("mousedown", function (e) {
-      var li = e.target.closest("li[data-task]"); if (!li) return;
-      e.preventDefault();
-      selectTask(li.getAttribute("data-task"), true); closeSuggest(); q.blur();
-    });
-    q.addEventListener("blur", function () { setTimeout(closeSuggest, 120); });
 
     $("#sel-openai").addEventListener("change", function (e) { state.oa = e.target.value; state.open = {}; update(); });
     $("#sel-anthropic").addEventListener("change", function (e) { state.an = e.target.value; state.open = {}; update(); });
@@ -878,7 +818,6 @@
   }
 
   /* ---------- Démarrage ---------- */
-  if (window.innerWidth < 560) $("#q").setAttribute("placeholder", "Que voulez-vous faire\u202f?");
   readURL();
   renderCats();
   renderTasks();
