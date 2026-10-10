@@ -1,5 +1,5 @@
 /*
-  lebonmodel, abonnements (vérifiés le 6 octobre 2026)
+  lebonmodel, abonnements (vérifiés le 6 octobre 2026, Haiku 5.5 ajouté le 10 octobre 2026)
   ---------------------------------------------------------------
   chat / work / code : réglages accessibles dans la conversation, l'agent de travail
   (ChatGPT Work) et l'agent de code (Codex, Claude Code).
@@ -9,7 +9,7 @@
   Ni OpenAI ni Anthropic ne publient de quota en tokens : les volumes ci-dessous
   reprennent uniquement ce que les éditeurs publient.
 */
-window.LBM_FX = { usdToEur: 0.8925, vat: 0.2, date: "5 octobre 2026" };
+window.LBM_FX = { usdToEur: 0.8924, vat: 0.2, date: "9 octobre 2026" };
 
 window.LBM_PLANS = {
   openai: [
@@ -48,21 +48,21 @@ window.LBM_PLANS = {
   ],
   anthropic: [
     { id: "free", name: "Claude Gratuit", short: "Gratuit", usd: 0,
-      chat: "sonnet55 haiku45", code: [],
+      chat: "sonnet55 haiku55 haiku45", code: [],
       ctx: null,
       volume: ["Session de 5 h, volume non publié", "PDF jusqu'à 1 000 pages", "Pas de Claude Code"] },
     { id: "pro", name: "Claude Pro", short: "Pro", usd: 20,
-      chat: "opus55 sonnet55 haiku45", code: "opus55 sonnet55 haiku45",
+      chat: "opus55 sonnet55 haiku55 haiku45", code: "opus55 sonnet55 haiku55 haiku45",
       ctx: null,
       volume: ["Session de 5 h et plafond hebdomadaire, volumes non publiés", "Claude Code inclus", "Fable 5.1 seulement en crédits payants"] },
     { id: "max", name: "Claude Max 5x", short: "Max", usd: 100, priceNote: "100 $ (Max 5x) ou 200 $ (Max 20x)",
-      chat: "fable51 opus55 sonnet55 haiku45", code: "fable51 opus55 sonnet55 haiku45",
+      chat: "fable51 opus55 sonnet55 haiku55 haiku45", code: "fable51 opus55 sonnet55 haiku55 haiku45",
       ctx: null,
       volume: ["5 fois le volume de Pro par session", "Fable 5.1 jusqu'à la moitié du plafond hebdomadaire"] },
     { id: "max20", hidden: true, name: "Claude Max 20x", short: "Max 20x", usd: 200, same: "max",
       volume: ["20 fois le volume de Pro par session", "Fable 5.1 jusqu'à la moitié du plafond hebdomadaire"] },
     { id: "team", name: "Claude Team", short: "Team", usd: 25, perSeat: true, priceNote: "par personne, 20 $ en annuel",
-      chat: "opus55 sonnet55 haiku45", code: "opus55 sonnet55 haiku45",
+      chat: "opus55 sonnet55 haiku55 haiku45", code: "opus55 sonnet55 haiku55 haiku45",
       ctx: null,
       volume: ["1,25 fois le volume de Pro par personne", "Claude Code inclus"] }
   ]
