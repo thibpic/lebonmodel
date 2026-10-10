@@ -1,0 +1,18 @@
+{
+  "name": "lebonmodel-recherche",
+  "private": true,
+  "type": "module",
+  "description": "Proxy de recherche de lebonmodel : Claude Haiku 5.5 traduit une demande en réglages du site.",
+  "scripts": {
+    "catalog": "node scripts/build-catalog.mjs",
+    "test": "node --test test/*.test.mjs",
+    "dev": "wrangler dev",
+    "deploy": "npm run catalog && npm test && wrangler deploy"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "0.131.0"
+  },
+  "devDependencies": {
+    "wrangler": "4.147.0"
+  }
+}
