@@ -12,9 +12,9 @@
   est  : score estimé par Artificial Analysis (pas de mesure complète)
 */
 window.LBM_BUDGET = {
-  updated: "2026-10-06",
-  updatedLabel: "6 octobre 2026",
-  fx: { usdToEur: 0.8925, vat: 0.2, date: "5 octobre 2026", source: "Banque centrale européenne" },
+  updated: "2026-10-10",
+  updatedLabel: "10 octobre 2026",
+  fx: { usdToEur: 0.8924, vat: 0.2, date: "9 octobre 2026", source: "Banque centrale européenne" },
 
   providers: {
     openai: { name: "OpenAI", shape: "circle" },
@@ -183,21 +183,35 @@ window.LBM_BUDGET = {
     {
       id: "sonnet55", provider: "anthropic", name: "Claude Sonnet 5.5", short: "Sonnet 5.5",
       tier: "Équilibré", generation: "actuelle", released: "2026-09-28",
-      price: { in: 2, cache: 0.2, out: 10 }, tok: 1.3, ctx: "1 M tokens",
+      price: { in: 2, cache: 0.1, out: 10 }, tok: 1.3, ctx: "1 M tokens",
       apps: "Claude gratuit, Pro et Max, Claude Code",
       levels: [
-        { e: "low", idx: 35.87, task: 0.42, out: 14253, tps: 100.9 },
-        { e: "medium", idx: 40.84, task: 0.59, out: 20938, tps: 103.3 },
-        { e: "high", idx: 46.75, task: 1.12, out: 37327, tps: 103.1 },
-        { e: "xhigh", idx: 51.9, task: 2.75, out: 74810, tps: 106.2 },
-        { e: "max", idx: 56.0, task: 7.67, out: 197430, tps: 127.5 }
+        { e: "low", idx: 35.87, task: 0.35, out: 14253, tps: 100.9 },
+        { e: "medium", idx: 40.84, task: 0.48, out: 20938, tps: 103.3 },
+        { e: "high", idx: 46.75, task: 0.88, out: 37327, tps: 103.1 },
+        { e: "xhigh", idx: 51.9, task: 2.01, out: 74810, tps: 106.2 },
+        { e: "max", idx: 56.0, task: 5.46, out: 197430, tps: 127.5 }
+      ]
+    },
+    /* Haiku 5.5 : out estimé à partir de Sonnet 5.5 (Artificial Analysis ne publie pas encore le détail) */
+    {
+      id: "haiku55", provider: "anthropic", name: "Claude Haiku 5.5", short: "Haiku 5.5",
+      tier: "Économique", generation: "actuelle", released: "2026-10-07",
+      price: { in: 0.1, cache: 0.01, out: 0.5 }, tok: 1.3, ctx: "1 M tokens",
+      apps: "Claude gratuit et payant, Claude Code (offres payantes), API",
+      levels: [
+        { e: "low", idx: 29, task: 0.02, out: 13574, tps: 178 },
+        { e: "medium", idx: 34, task: 0.05, out: 33936, tps: 166 },
+        { e: "high", idx: 38, task: 0.08, out: 54297, tps: 174 },
+        { e: "xhigh", idx: 41, task: 0.12, out: 85172, tps: 188 },
+        { e: "max", idx: 43, task: 0.21, out: 149050, tps: 240 }
       ]
     },
     {
       id: "haiku45", provider: "anthropic", name: "Claude Haiku 4.5", short: "Haiku 4.5",
       tier: "Économique", generation: "actuelle", released: "2025-10-15",
       price: { in: 1, cache: 0.1, out: 5 }, tok: 1, ctx: "200 k tokens",
-      apps: "Claude gratuit et payant, API (Haiku 5.5 annoncé)",
+      apps: "Claude gratuit et payant, API",
       levels: [
         { e: "none", idx: 15.41, task: null, out: null, tps: 91.4, est: true },
         { e: "reasoning", idx: 16.88, task: 0.28, out: 18485, tps: 111.5 }
@@ -271,13 +285,13 @@ window.LBM_BUDGET = {
     ],
     anthropic: [
       { id: "free", name: "Claude Gratuit", usd: 0, cap: 3, def: ["sonnet55", "medium"],
-        chat: [["sonnet55", "medium", "Sonnet 5.5"], ["haiku45", "none", "Haiku 4.5"]], code: [] },
+        chat: [["sonnet55", "medium", "Sonnet 5.5"], ["haiku55", "medium", "Haiku 5.5"], ["haiku45", "none", "Haiku 4.5"]], code: [] },
       { id: "pro", name: "Claude Pro", usd: 20, cap: 150, def: ["sonnet55", "medium"], codeDef: ["opus55", "medium"],
-        chat: "opus55 sonnet55 haiku45", code: "opus55 sonnet55", codeLabel: "Claude Code" },
+        chat: "opus55 sonnet55 haiku55 haiku45", code: "opus55 sonnet55 haiku55", codeLabel: "Claude Code" },
       { id: "max5", name: "Claude Max 5x", usd: 100, cap: 800, def: ["opus55", "medium"], codeDef: ["opus55", "medium"],
-        chat: "fable51 opus55 sonnet55 haiku45", code: "fable51 opus55 sonnet55", codeLabel: "Claude Code" },
+        chat: "fable51 opus55 sonnet55 haiku55 haiku45", code: "fable51 opus55 sonnet55 haiku55", codeLabel: "Claude Code" },
       { id: "max20", name: "Claude Max 20x", usd: 200, cap: Infinity, def: ["opus55", "medium"], codeDef: ["opus55", "medium"],
-        chat: "fable51 opus55 sonnet55 haiku45", code: "fable51 opus55 sonnet55", codeLabel: "Claude Code" }
+        chat: "fable51 opus55 sonnet55 haiku55 haiku45", code: "fable51 opus55 sonnet55 haiku55", codeLabel: "Claude Code" }
     ]
   },
 
