@@ -26,6 +26,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Raleway:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/ai-search.css">
 <script>
   (function () {
     try {
@@ -71,6 +72,17 @@
   <section class="hero wrap" aria-labelledby="titre">
     <h1 id="titre">Le bon modèle d'IA pour chaque tâche.</h1>
     <p class="lede">Choisissez ce que vous voulez faire. lebonmodel compare les modèles d'OpenAI et d'Anthropic sur cette tâche précise, avec l'abonnement que vous avez déjà.</p>
+
+    <form class="ai-search" id="ai-search" role="search" autocomplete="off" hidden>
+      <label class="sr-only" for="ai-q">Décrivez votre besoin</label>
+      <div class="ai-field">
+        <svg class="ai-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l1.9 5.6 5.6 1.9-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.9L12 2.5zM18.5 15l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9.9-2.6z"/></svg>
+        <input id="ai-q" name="q" type="search" maxlength="300" enterkeyhint="search" placeholder="Ex. : relire un contrat de 40 pages avec ChatGPT Plus">
+        <button type="submit">Chercher</button>
+      </div>
+      <p class="ai-note">Votre demande est interprétée par Claude Haiku 5.5 (Anthropic), qui ne fait que régler le comparateur. N'y mettez pas de données personnelles.</p>
+      <div class="ai-answer" id="ai-answer" aria-live="polite" hidden></div>
+    </form>
 
     <div class="picker">
       <div class="cats" id="cats" role="tablist" aria-label="Familles de tâches"></div>
@@ -225,5 +237,7 @@
 <script src="assets/tasks.js"></script>
 <script src="assets/plans.js"></script>
 <script src="assets/app.js"></script>
+<script src="assets/ai-config.js"></script>
+<script src="assets/ai-search.js"></script>
 </body>
 </html>
