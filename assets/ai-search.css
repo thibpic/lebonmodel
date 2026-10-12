@@ -18,7 +18,6 @@
 .ai-field button:hover { background: var(--gold-ink); }
 .ai-field button:disabled { opacity: .55; cursor: progress; }
 .ai-field button:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
-.ai-note { margin: 10px 0 0 24px; font-size: 0.8rem; color: var(--text-3); }
 .ai-answer { margin-top: 16px; padding: 16px 20px; border-radius: 18px; background: var(--gold-faint); color: var(--text-2); font-size: 0.98rem; line-height: 1.6; }
 .ai-answer p { margin: 0; }
 .ai-answer p + p { margin-top: 8px; }
@@ -30,5 +29,4 @@
   .ai-field input { height: 56px; font-size: 1rem; padding: 0 104px 0 48px; }
   .ai-icon { left: 18px; }
   .ai-field button { padding: 0 16px; }
-  .ai-note { margin-left: 16px; }
 }
