@@ -24,7 +24,7 @@
   var MSG = {
     vide: "Décrivez ce que vous voulez faire en quelques mots.",
     long: "Votre demande dépasse 300 caractères : raccourcissez-la.",
-    incompris: "Je n'ai pas reconnu de tâche à confier à une IA. Essayez par exemple « relire un contrat de 40 pages avec ChatGPT Plus », ou choisissez dans la liste.",
+    incompris: "Je n'ai pas compris votre demande. Décrivez une tâche, par exemple « relire un contrat de 40 pages avec ChatGPT Plus », ou choisissez dans la liste.",
     debit: "Trop de demandes en peu de temps. Réessayez dans une minute, ou choisissez dans la liste.",
     panne: "La recherche est indisponible pour le moment. Choisissez dans la liste, le comparateur fonctionne sans elle."
   };
@@ -62,7 +62,7 @@
     if (q.length < 2) return show([{ text: MSG.vide }], "info");
     if (q.length > MAX) return show([{ text: MSG.long }], "info");
     busy = true; button.disabled = true; form.setAttribute("aria-busy", "true");
-    show([{ text: "Claude Haiku lit votre demande…" }], "wait");
+    show([{ text: "Je cherche la tâche la plus proche…" }], "wait");
 
     var ctrl = window.AbortController ? new AbortController() : null;
     var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 20000);
@@ -84,7 +84,7 @@
       if (!out || typeof out.phrase !== "string") return show([{ text: MSG.incompris }], "info");
       var lines = [{ text: out.phrase }];
       if (cfg.phrase === true && typeof it.reformulation === "string" && it.reformulation) {
-        lines.unshift({ label: "Reformulé par Claude Haiku : ", text: it.reformulation.slice(0, 220) });
+        lines.unshift({ label: "Reformulé par l'IA : ", text: it.reformulation.slice(0, 220) });
       }
       show(lines, "ok");
     }).catch(function (err) {
