@@ -190,6 +190,18 @@ test("le modèle qui a répondu est tracé, repli compris", async () => {
   assert.equal(t3.model, "claude-haiku-5-5; openrouter: cle_absente");
 });
 
+test("un refus d'OpenRouter journalise son motif, borné, sans le mettre dans l'en-tête", async (t) => {
+  const log = t.mock.method(console, "log", () => {});
+  const trace = {};
+  const refus = { error: { message: "Provider returned error", metadata: { raw: "m".repeat(600) } } };
+  await interpret(ENV_OR, "modele", "x x", fakeFetch(refus, 400), fakeClient(JSON.stringify(okModele)), trace);
+  const [, why, detail] = log.mock.calls[0].arguments;
+  assert.equal(why, "erreur_400");
+  assert.ok(detail.startsWith("Provider returned error | mmm"));
+  assert.equal(detail.length, 400);
+  assert.equal(trace.model, "claude-haiku-5-5; repli: erreur_400");
+});
+
 test("interpret via OpenRouter rejette une sortie invalide, tronquée, refusée ou en erreur", async () => {
   assert.equal(await interpret(ENV_OR_SEUL, "modele", "x x", fakeFetch(orReply('{"pertinent":true}'))), null);
   assert.equal(await interpret(ENV_OR_SEUL, "modele", "x x", fakeFetch(orReply("pas du json"))), null);
