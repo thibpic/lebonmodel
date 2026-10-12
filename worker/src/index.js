@@ -80,6 +80,16 @@ async function viaAnthropic(env, page, query, withPhrase, client) {
   return block ? parseOut(page, block.text, withPhrase) : null;
 }
 
+/* Motif du refus d'OpenRouter, borné, pour le journal seulement (jamais renvoyé au navigateur) */
+async function errorDetail(res) {
+  try {
+    const body = await res.json();
+    const e = (body && body.error) || {};
+    const raw = e.metadata && e.metadata.raw;
+    return [e.message, typeof raw === "string" ? raw : raw && JSON.stringify(raw)].filter(Boolean).join(" | ").slice(0, 400);
+  } catch (e) { return ""; }
+}
+
 /*
   OpenRouter, API compatible OpenAI. La sortie passe par un appel d'outil forcé dont les
   paramètres sont le schéma à valeurs fermées : c'est ce que déclarent la plupart des
@@ -116,6 +126,7 @@ async function viaOpenRouter(env, page, query, withPhrase, fetcher) {
   if (!res.ok) {
     const err = new Error("openrouter");
     err.status = res.status;
+    err.detail = await errorDetail(res);
     throw err;
   }
   const data = await res.json();
@@ -147,7 +158,7 @@ export async function interpret(env, page, query, client, anthropic, trace) {
   if (out) return out;
   if (!env.ANTHROPIC_API_KEY) { if (failure) throw failure; return null; }
   const why = failure ? "erreur_" + (failure.status || failure.name || "reseau") : "sortie_invalide";
-  console.log("repli haiku", why);
+  console.log("repli haiku", why, (failure && failure.detail) || "");
   t.model = MODEL + "; repli: " + why;
   return viaAnthropic(env, page, query, withPhrase, anthropic);
 }
