@@ -178,6 +178,18 @@ test("OpenRouter en échec ou invalide repart sur Haiku si sa clé est posée", 
   assert.deepEqual(await interpret(ENV_OR, "modele", "x x", fakeFetch(orReply(null, "stop", "non")), haiku), { pertinent: false });
 });
 
+test("le modèle qui a répondu est tracé, repli compris", async () => {
+  const t1 = {};
+  await interpret(ENV_OR, "modele", "x x", fakeFetch(orTool(JSON.stringify(okModele))), undefined, t1);
+  assert.equal(t1.model, "fournisseur/modele");
+  const t2 = {};
+  await interpret(ENV_OR, "modele", "x x", fakeFetch({ error: { message: "x" } }, 404), fakeClient(JSON.stringify(okModele)), t2);
+  assert.equal(t2.model, "claude-haiku-5-5; repli: erreur_404");
+  const t3 = {};
+  await interpret({ ...ENV, OPENROUTER_MODEL: "x/y" }, "modele", "x x", fakeClient(JSON.stringify(okModele)), undefined, t3);
+  assert.equal(t3.model, "claude-haiku-5-5; openrouter: cle_absente");
+});
+
 test("interpret via OpenRouter rejette une sortie invalide, tronquée, refusée ou en erreur", async () => {
   assert.equal(await interpret(ENV_OR_SEUL, "modele", "x x", fakeFetch(orReply('{"pertinent":true}'))), null);
   assert.equal(await interpret(ENV_OR_SEUL, "modele", "x x", fakeFetch(orReply("pas du json"))), null);

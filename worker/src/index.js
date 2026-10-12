@@ -29,8 +29,9 @@ function origins(env) {
   return String(env.ALLOWED_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean);
 }
 
-function json(body, status, origin) {
+function json(body, status, origin, extra) {
   const h = {
+    ...(extra || {}),
     "content-type": "application/json; charset=utf-8",
     "cache-control": "no-store",
     "x-content-type-options": "nosniff",
@@ -41,6 +42,7 @@ function json(body, status, origin) {
     h["access-control-allow-methods"] = "POST, OPTIONS";
     h["access-control-allow-headers"] = "content-type";
     h["access-control-max-age"] = "86400";
+    h["access-control-expose-headers"] = "x-lbm-model";
   }
   return new Response(body == null ? null : JSON.stringify(body), { status, headers: h });
 }
@@ -129,16 +131,24 @@ async function viaOpenRouter(env, page, query, withPhrase, fetcher) {
   Si OpenRouter échoue ou rend une sortie invalide, et que ANTHROPIC_API_KEY est posé,
   la demande repart sur Haiku : la recherche ne tombe pas avec un hébergeur.
   client : client Anthropic ou fonction fetch simulés, pour les tests ; anthropic : client
-  Anthropic simulé pour le repli.
+  Anthropic simulé pour le repli. trace.model reçoit le modèle qui a répondu (et la raison
+  d'un repli), renvoyé dans l'en-tête x-lbm-model pour vérifier sans lire les journaux.
 */
-export async function interpret(env, page, query, client, anthropic) {
+export async function interpret(env, page, query, client, anthropic, trace) {
   const withPhrase = env.PHRASE_LIBRE === "on";
-  if (backend(env) !== "openrouter") return viaAnthropic(env, page, query, withPhrase, client);
+  const t = trace || {};
+  if (backend(env) !== "openrouter") {
+    t.model = MODEL + (env.OPENROUTER_MODEL ? "; openrouter: cle_absente" : "");
+    return viaAnthropic(env, page, query, withPhrase, client);
+  }
+  t.model = env.OPENROUTER_MODEL;
   let out = null, failure = null;
   try { out = await viaOpenRouter(env, page, query, withPhrase, client); } catch (e) { failure = e; }
   if (out) return out;
   if (!env.ANTHROPIC_API_KEY) { if (failure) throw failure; return null; }
-  console.log("repli haiku", failure ? failure.status : "sortie_invalide");
+  const why = failure ? "erreur_" + (failure.status || failure.name || "reseau") : "sortie_invalide";
+  console.log("repli haiku", why);
+  t.model = MODEL + "; repli: " + why;
   return viaAnthropic(env, page, query, withPhrase, anthropic);
 }
 
@@ -167,13 +177,16 @@ export default {
     if (!q) return json({ erreur: "demande" }, 400, allowed);
 
     let intention;
+    const trace = {};
     try {
-      intention = await interpret(env, body.page, q);
+      intention = await interpret(env, body.page, q, undefined, undefined, trace);
     } catch (e) {
       console.log(backend(env), e && e.status, e && e.name);
-      return json({ erreur: "indisponible" }, 502, allowed);
+      return json({ erreur: "indisponible" }, 502, allowed, { "x-lbm-model": trace.model || "" });
     }
-    if (!intention) return json({ erreur: "sortie_invalide" }, 502, allowed);
-    return json({ page: body.page, intention }, 200, allowed);
+    const via = { "x-lbm-model": trace.model || "" };
+    if (!intention) return json({ erreur: "sortie_invalide" }, 502, allowed, via);
+    console.log("modele", trace.model);
+    return json({ page: body.page, intention }, 200, allowed, via);
   }
 };
