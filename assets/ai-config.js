@@ -6,4 +6,4 @@
   phrase   : affiche la reformulation libre de Haiku, si le proxy l'envoie
              (PHRASE_LIBRE = "on"). Désactivé par défaut.
 */
-window.LBM_AI = { endpoint: "", phrase: false };
+window.LBM_AI = { endpoint: "https://lebonmodel-recherche.numenys.workers.dev",phrase: false };
