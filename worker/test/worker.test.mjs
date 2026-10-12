@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { buildCatalog } from "../scripts/build-catalog.mjs";
 import { cleanPhrase, cleanQuery, outputSchema, validate } from "../src/contract.js";
 import { systemPrompt, userMessage } from "../src/prompt.js";
-import worker, { interpret } from "../src/index.js";
+import worker, { backend, interpret } from "../src/index.js";
 
 const ORIGIN = "https://lebonmodel.numenys.fr";
 const ENV = { ALLOWED_ORIGINS: ORIGIN, PHRASE_LIBRE: "off", ANTHROPIC_API_KEY: "test" };
@@ -22,8 +22,8 @@ function fakeClient(text, stop) {
   };
 }
 
-const okModele = { pertinent: true, tache: "contrat", chatgpt: "plus", claude: "inconnu", exigence: "sans_faute", conversation_uniquement: "inconnu" };
-const okBudget = { pertinent: true, usage: "support", rythme: 3000, exigence: "inconnu", acces: "api" };
+const okModele = { pertinent: true, tache: "contrat", editeur: "google", chatgpt: "plus", claude: "inconnu", gemini: "pro", vibe: "inconnu", grok: "inconnu", deepseek: "none", exigence: "sans_faute", conversation_uniquement: "inconnu" };
+const okBudget = { pertinent: true, usage: "support", editeur: "mistral", rythme: 3000, exigence: "inconnu", acces: "api" };
 
 test("catalog.json est à jour avec les données du site", () => {
   const onDisk = JSON.parse(readFileSync(new URL("../src/catalog.json", import.meta.url), "utf8"));
@@ -49,6 +49,8 @@ test("validate accepte une sortie conforme", () => {
 test("validate rejette toute valeur hors liste, clé en trop ou manquante", () => {
   assert.equal(validate("modele", { ...okModele, tache: "pirater" }, false), null);
   assert.equal(validate("modele", { ...okModele, chatgpt: "<script>" }, false), null);
+  assert.equal(validate("modele", { ...okModele, editeur: "inconnu-sa" }, false), null);
+  assert.equal(validate("modele", { ...okModele, grok: "free" }, false), null, "pas d'offre gratuite Grok au catalogue");
   assert.equal(validate("modele", { ...okModele, extra: "x" }, false), null);
   const { claude, ...missing } = okModele;
   assert.equal(validate("modele", missing, false), null);
@@ -81,7 +83,8 @@ test("la demande est bornée et neutralisée", () => {
 
 test("le prompt liste toutes les valeurs autorisées", () => {
   const p = systemPrompt("modele", false);
-  for (const id of ["contrat", "vibecoder", "plus", "max", "team"]) assert.ok(p.includes(`- ${id} :`), id);
+  for (const id of ["contrat", "vibecoder", "plus", "max", "team", "ultra", "supergrok", "google", "mistral"]) assert.ok(p.includes(`- ${id} :`), id);
+  for (const k of ["chatgpt", "claude", "gemini", "vibe", "grok", "deepseek"]) assert.ok(p.includes(`- ${k} : l'abonnement`), k);
   assert.ok(!p.includes("reformulation"));
   assert.ok(systemPrompt("budget", true).includes("reformulation"));
 });
@@ -123,4 +126,63 @@ test("le Worker filtre origine, méthode, format, taille et débit avant d'appel
   assert.equal((await worker.fetch(req("{" + " ".repeat(3000) + "}"), ENV)).status, 413);
   const limited = { ...ENV, RL_IP: { limit: async () => ({ success: false }) } };
   assert.equal((await worker.fetch(req({ page: "modele", q: "relire un contrat" }), limited)).status, 429);
+});
+
+function fakeFetch(body, status) {
+  const calls = [];
+  const f = async (url, init) => {
+    calls.push({ url, init, body: JSON.parse(init.body) });
+    return new Response(JSON.stringify(body), { status: status || 200, headers: { "content-type": "application/json" } });
+  };
+  f.calls = calls;
+  return f;
+}
+const ENV_OR = { ...ENV, OPENROUTER_API_KEY: "or-test", OPENROUTER_MODEL: "fournisseur/modele" };
+const orReply = (content, finish, refusal) => ({ choices: [{ finish_reason: finish || "stop", message: { role: "assistant", content, refusal: refusal || null } }] });
+const orTool = (args, finish) => ({ choices: [{ finish_reason: finish || "tool_calls", message: { role: "assistant", content: null, tool_calls: [{ id: "c1", type: "function", function: { name: "reglages", arguments: args } }] } }] });
+const ENV_OR_SEUL = { ...ENV_OR, ANTHROPIC_API_KEY: "" };
+
+test("OpenRouter n'est utilisé que si le modèle et la clé sont posés", () => {
+  assert.equal(backend(ENV), "anthropic");
+  assert.equal(backend({ ...ENV, OPENROUTER_MODEL: "x/y" }), "anthropic");
+  assert.equal(backend({ ...ENV, OPENROUTER_API_KEY: "k" }), "anthropic");
+  assert.equal(backend(ENV_OR), "openrouter");
+});
+
+test("interpret via OpenRouter envoie le modèle configuré avec un schéma strict et revalide", async () => {
+  const f = fakeFetch(orReply(JSON.stringify(okModele)));
+  assert.deepEqual(await interpret(ENV_OR, "modele", "relire un contrat", f), okModele);
+  const { url, init, body } = f.calls[0];
+  assert.equal(url, "https://openrouter.ai/api/v1/chat/completions");
+  assert.equal(init.headers.authorization, "Bearer or-test");
+  assert.equal(body.model, "fournisseur/modele");
+  assert.equal(body.tools[0].function.name, "reglages");
+  assert.equal(body.tools[0].function.strict, true);
+  assert.deepEqual(body.tools[0].function.parameters, outputSchema("modele", false));
+  assert.deepEqual(body.tool_choice, { type: "function", function: { name: "reglages" } });
+  assert.equal(body.provider.data_collection, "deny");
+  assert.equal(body.messages[0].role, "system");
+  assert.equal(body.messages.at(-1).content, userMessage("relire un contrat"));
+});
+
+test("interpret via OpenRouter lit l'appel d'outil forcé", async () => {
+  assert.deepEqual(await interpret(ENV_OR, "modele", "relire un contrat", fakeFetch(orTool(JSON.stringify(okModele)))), okModele);
+  assert.deepEqual(await interpret(ENV_OR, "modele", "x x", fakeFetch(orTool(JSON.stringify(okModele), "stop"))), okModele);
+  assert.equal(await interpret(ENV_OR_SEUL, "modele", "x x", fakeFetch(orTool('{"pertinent":true}'))), null);
+});
+
+test("OpenRouter en échec ou invalide repart sur Haiku si sa clé est posée", async () => {
+  const haiku = fakeClient(JSON.stringify(okModele));
+  assert.deepEqual(await interpret(ENV_OR, "modele", "x x", fakeFetch({ error: { message: "x" } }, 404), haiku), okModele);
+  assert.deepEqual(await interpret(ENV_OR, "modele", "x x", fakeFetch(orTool("pas du json")), haiku), okModele);
+  assert.deepEqual(await interpret(ENV_OR, "modele", "x x", fakeFetch(orReply(null, "stop", "non")), haiku), { pertinent: false });
+});
+
+test("interpret via OpenRouter rejette une sortie invalide, tronquée, refusée ou en erreur", async () => {
+  assert.equal(await interpret(ENV_OR_SEUL, "modele", "x x", fakeFetch(orReply('{"pertinent":true}'))), null);
+  assert.equal(await interpret(ENV_OR_SEUL, "modele", "x x", fakeFetch(orReply("pas du json"))), null);
+  assert.equal(await interpret(ENV_OR_SEUL, "modele", "x x", fakeFetch(orReply(JSON.stringify(okModele), "length"))), null);
+  assert.deepEqual(await interpret(ENV_OR_SEUL, "modele", "x x", fakeFetch(orReply(null, "stop", "non"))), { pertinent: false });
+  assert.equal(await interpret(ENV_OR_SEUL, "modele", "x x", fakeFetch({ choices: [] })), null);
+  await assert.rejects(interpret(ENV_OR, "modele", "x x", fakeFetch({ error: { message: "x" } }, 401)));
 });

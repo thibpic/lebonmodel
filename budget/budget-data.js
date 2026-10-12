@@ -12,16 +12,14 @@
   est  : score estimé par Artificial Analysis (pas de mesure complète)
 */
 window.LBM_BUDGET = {
-  updated: "2026-10-10",
-  updatedLabel: "10 octobre 2026",
+  updated: "2026-10-12",
+  updatedLabel: "12 octobre 2026",
   fx: { usdToEur: 0.8924, vat: 0.2, date: "9 octobre 2026", source: "Banque centrale européenne" },
 
-  providers: {
-    openai: { name: "OpenAI", shape: "circle" },
-    anthropic: { name: "Anthropic", shape: "square" }
-  },
+  /* Éditeurs, noms et formes : assets/providers.js, partagé avec la page principale */
 
   effortLabels: {
+    "default": "réglage unique",
     none: "sans réflexion",
     reasoning: "réflexion étendue",
     low: "faible",
@@ -216,6 +214,135 @@ window.LBM_BUDGET = {
         { e: "none", idx: 15.41, task: null, out: null, tps: 91.4, est: true },
         { e: "reasoning", idx: 16.88, task: 0.28, out: 18485, tps: 111.5 }
       ]
+    },
+    /* ---------------- Google ---------------- */
+    {
+      id: "gemini4argon", provider: "google", name: "Gemini 4 Argon", short: "4 Argon",
+      tier: "Haut de gamme", generation: "actuelle", released: "2026-09-30",
+      price: { in: 2, cache: 0.1, out: 10 }, tok: 1, ctx: "1 M tokens",
+      apps: "API seulement : pas encore dans l'appli Gemini",
+      levels: [
+        { e: "high", idx: 53, task: 1.99, out: 62607, tps: 60 }
+      ]
+    },
+    {
+      id: "gemini38flash", provider: "google", name: "Gemini 3.8 Flash", short: "3.8 Flash",
+      tier: "Équilibré", generation: "actuelle", released: "2026-09-02",
+      price: { in: 0.75, cache: 0.075, out: 3.75 }, tok: 1, ctx: "1 M tokens",
+      apps: "Appli Gemini dès AI Pro, API",
+      levels: [
+        { e: "medium", idx: 40, task: 0.93, out: 54069, tps: 131.5 },
+        { e: "high", idx: 41, task: 1.24, out: 96756, tps: 131.5 }
+      ]
+    },
+    {
+      id: "gemini35lite", provider: "google", name: "Gemini 3.5 Flash-Lite", short: "Flash-Lite",
+      tier: "Économique", generation: "actuelle", released: "2026-07-21",
+      price: { in: 0.3, cache: 0.03, out: 2.5 }, tok: 1, ctx: "1 M tokens",
+      apps: "Appli Gemini, dès l'offre gratuite, API",
+      levels: [
+        { e: "default", idx: 22, task: 0.19, out: 33580, tps: 424.1 }
+      ]
+    },
+    /* ---------------- Mistral ---------------- */
+    {
+      id: "mistrallarge4", provider: "mistral", name: "Mistral Large 4 Preview", short: "Large 4",
+      tier: "Haut de gamme", generation: "actuelle", released: "2026-10-06",
+      price: { in: 1.36, cache: 0.14, out: 4.18 }, tok: 1, ctx: "524 k tokens",
+      apps: "API ; annoncé comme futur modèle par défaut de Vibe",
+      levels: [
+        { e: "default", idx: 38, task: 1.13, out: 113830, tps: 60 }
+      ]
+    },
+    {
+      id: "mistralmedium35", provider: "mistral", name: "Mistral Medium 3.5", short: "Medium 3.5",
+      tier: "Équilibré", generation: "actuelle", released: "2026-04-29",
+      price: { in: 1.5, cache: 0.15, out: 7.5 }, tok: 1, ctx: "256 k tokens",
+      apps: "Vibe (ex-Le Chat), dès l'offre gratuite, API",
+      levels: [
+        { e: "default", idx: 14, task: 0.5, out: 56915, tps: 164 }
+      ]
+    },
+    {
+      id: "mistralsmall4", provider: "mistral", name: "Mistral Small 4", short: "Small 4",
+      tier: "Économique", generation: "actuelle", released: "2026-03-16",
+      price: { in: 0.15, cache: 0.015, out: 0.6 }, tok: 1, ctx: "256 k tokens",
+      apps: "API",
+      levels: [
+        { e: "reasoning", idx: 11, task: 0.02, out: 30734, tps: 163.2 }
+      ]
+    },
+    /* ---------------- xAI ---------------- */
+    {
+      id: "grok47", provider: "xai", name: "Grok 4.7", short: "Grok 4.7",
+      tier: "Haut de gamme", generation: "actuelle", released: "2026-09-21",
+      price: { in: 2, cache: 0.5, out: 6 }, tok: 1, ctx: "500 k tokens",
+      apps: "Grok dès SuperGrok (mode Expert), Grok Business, API",
+      levels: [
+        { e: "low", idx: 42, task: 1.25, out: 42686, tps: 71.6 },
+        { e: "high", idx: 46, task: 2.73, out: 113830, tps: 73 },
+        { e: "xhigh", idx: 46, task: 3.74, out: 136596, tps: 83.3 }
+      ]
+    },
+    /* ---------------- DeepSeek ---------------- */
+    {
+      id: "deepseekv41flash", provider: "deepseek", name: "DeepSeek V4.1 Flash", short: "V4.1 Flash",
+      tier: "Économique", generation: "actuelle", released: "2026-09-10",
+      price: { in: 0.3, cache: 0.006, out: 1.2 }, tok: 1, ctx: "1 M tokens",
+      apps: "API ; l'appli DeepSeek utilise un modèle Flash proche",
+      levels: [
+        { e: "max", idx: 39, task: 0.27, out: 142288, tps: 208.4 },
+        { e: "none", idx: 25, task: 0.15, out: 25612, tps: 215.8 }
+      ]
+    },
+    {
+      id: "deepseekv4pro", provider: "deepseek", name: "DeepSeek V4 Pro", short: "V4 Pro",
+      tier: "Équilibré", generation: "actuelle", released: "2026-08-13",
+      price: { in: 1.32, cache: 0.044, out: 3.96 }, tok: 1, ctx: "1 M tokens",
+      apps: "Appli DeepSeek gratuite (mode Expert), API",
+      levels: [
+        { e: "max", idx: 36, task: 0.67, out: 91064, tps: 93 },
+        { e: "none", idx: 20, task: 0.46, out: 22766, tps: 94.6 }
+      ]
+    },
+    /* ---------------- Meta ---------------- */
+    {
+      id: "musespark13", provider: "meta", name: "Muse Spark 1.3", short: "Spark 1.3",
+      tier: "Haut de gamme", generation: "actuelle", released: "2026-09-02",
+      price: { in: 1.25, cache: 0.15, out: 4.25 }, tok: 1, ctx: "1 M tokens",
+      apps: "API ; l'appli Meta AI ne le propose pas en France",
+      levels: [
+        { e: "xhigh", idx: 45, task: 1.37, out: 79681, tps: 269.2 },
+        { e: "max", idx: 48, task: 1.6, out: 96756, tps: 177 }
+      ]
+    },
+    {
+      id: "museglimmer", provider: "meta", name: "Muse Glimmer", short: "Glimmer",
+      tier: "Économique", generation: "actuelle", released: "2026-08-10",
+      price: { in: 0.325, cache: 0.04, out: 1.35 }, tok: 1, ctx: "131 k tokens",
+      apps: "API, poids ouverts",
+      levels: [
+        { e: "high", idx: 17, task: 0.06, out: 33580, tps: 126.1 }
+      ]
+    },
+    /* ---------------- Alibaba ---------------- */
+    {
+      id: "qwen38max", provider: "alibaba", name: "Qwen3.8 Max", short: "Qwen3.8 Max",
+      tier: "Haut de gamme", generation: "actuelle", released: "2026-09-02",
+      price: { in: 2, cache: 0.25, out: 6 }, tok: 1, ctx: "984 k tokens",
+      apps: "API ; Qwen Chat gratuit",
+      levels: [
+        { e: "default", idx: 45, task: 5.41, out: 108139, tps: 36.2 }
+      ]
+    },
+    {
+      id: "qwen38flashnext", provider: "alibaba", name: "Qwen3.8 Flash-Next", short: "Flash-Next",
+      tier: "Économique", generation: "actuelle", released: "2026-08-26",
+      price: { in: 0.15, cache: 0.016, out: 0.47 }, tok: 1, ctx: "256 k tokens",
+      apps: "API, poids ouverts",
+      levels: [
+        { e: "default", idx: 40, task: 0.37, out: 136596, tps: 51.2 }
+      ]
     }
   ],
 
@@ -292,6 +419,38 @@ window.LBM_BUDGET = {
         chat: "fable51 opus55 sonnet55 haiku55 haiku45", code: "fable51 opus55 sonnet55 haiku55", codeLabel: "Claude Code" },
       { id: "max20", name: "Claude Max 20x", usd: 200, cap: Infinity, def: ["opus55", "medium"], codeDef: ["opus55", "medium"],
         chat: "fable51 opus55 sonnet55 haiku55 haiku45", code: "fable51 opus55 sonnet55 haiku55", codeLabel: "Claude Code" }
+    ],
+    /* Google : prix TTC publiés en euros. Gemini 4 Argon n'est pas encore dans l'appli. */
+    google: [
+      { id: "free", name: "Gemini Gratuit", eur: 0, usd: 0, cap: 3, def: ["gemini35lite", "default"],
+        chat: "gemini35lite", code: [] },
+      { id: "plus", name: "Google AI Plus", eur: 4.99, usd: 4.99, cap: 6, def: ["gemini35lite", "default"],
+        chat: "gemini35lite", code: [] },
+      { id: "pro", name: "Google AI Pro", eur: 21.99, usd: 19.99, cap: 150, def: ["gemini38flash", "medium"], codeDef: ["gemini38flash", "medium"],
+        chat: "gemini38flash gemini35lite", code: "gemini38flash", codeLabel: "Jules ou Antigravity" },
+      { id: "ultra", name: "Google AI Ultra", eur: 99.99, usd: 99.99, cap: 800, def: ["gemini38flash", "medium"], codeDef: ["gemini38flash", "medium"],
+        chat: "gemini38flash gemini35lite", code: "gemini38flash", codeLabel: "Jules ou Antigravity" },
+      { id: "ultra20", name: "Google AI Ultra 20x", eur: 219.99, usd: 199.99, cap: Infinity, def: ["gemini38flash", "medium"], codeDef: ["gemini38flash", "medium"],
+        chat: "gemini38flash gemini35lite", code: "gemini38flash", codeLabel: "Jules ou Antigravity" }
+    ],
+    /* Mistral : prix en dollars HT ; le modèle de chaque offre n'est pas publié (Medium 3.5 supposé) */
+    mistral: [
+      { id: "free", name: "Vibe Gratuit", usd: 0, cap: 3, def: ["mistralmedium35", "default"],
+        chat: "mistralmedium35", code: [] },
+      { id: "pro", name: "Vibe Pro", usd: 14.99, cap: 120, def: ["mistralmedium35", "default"], codeDef: ["mistralmedium35", "default"],
+        chat: "mistralmedium35", code: "mistralmedium35", codeLabel: "Vibe" }
+    ],
+    /* xAI : prix en dollars HT ; le modèle de l'offre gratuite n'est pas publié */
+    xai: [
+      { id: "supergrok", name: "SuperGrok", usd: 30, cap: 200, def: ["grok47", "high"], codeDef: ["grok47", "high"],
+        chat: [["grok47", "high", "Expert"]], code: "grok47", codeLabel: "Grok Build" },
+      { id: "heavy", name: "SuperGrok Heavy", usd: 300, cap: Infinity, def: ["grok47", "high"], codeDef: ["grok47", "high"],
+        chat: [["grok47", "high", "Expert"]], code: "grok47", codeLabel: "Grok Build" }
+    ],
+    /* DeepSeek : appli gratuite, Instant sur un modèle Flash (V4.1 Flash supposé), Expert sur V4 Pro */
+    deepseek: [
+      { id: "free", name: "DeepSeek Gratuit", usd: 0, cap: 10, def: ["deepseekv41flash", "none"],
+        chat: [["deepseekv41flash", "none", "Instant"], ["deepseekv4pro", "none", "Expert"], ["deepseekv4pro", "max", "Expert avec réflexion"]], code: [] }
     ]
   },
 
@@ -304,6 +463,10 @@ window.LBM_BUDGET = {
     { label: "Anthropic, tarifs de l'API", url: "https://platform.claude.com/docs/en/about-claude/pricing" },
     { label: "Anthropic, vue d'ensemble des modèles", url: "https://platform.claude.com/docs/en/models/overview" },
     { label: "Anthropic, offres Claude", url: "https://claude.com/pricing" },
+    { label: "Google, offres Google AI", url: "https://gemini.google/fr/subscriptions/" },
+    { label: "Mistral, offres Vibe et tarifs de l'API", url: "https://mistral.ai/pricing" },
+    { label: "xAI, offres Grok", url: "https://x.ai/pricing" },
+    { label: "DeepSeek, tarifs de l'API", url: "https://api-docs.deepseek.com/quick_start/pricing" },
     { label: "Taux de change de référence BCE", url: "https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html" }
   ]
 };

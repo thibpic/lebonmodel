@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Estimer un budget IA | lebonmodel</title>
-<meta name="description" content="Combien va vous coûter l'IA ? Estimez votre budget mensuel selon votre usage et votre volume, abonnement ou API, chez OpenAI et Anthropic.">
+<meta name="description" content="Combien va vous coûter l'IA ? Estimez votre budget mensuel selon votre usage et votre volume, abonnement ou API, chez OpenAI, Anthropic, Google, Mistral, xAI, DeepSeek, Meta et Alibaba.">
 <meta name="author" content="Numenys, Thibaut Picard Destelan">
 <link rel="canonical" href="https://lebonmodel.numenys.fr/budget/">
 <meta property="og:type" content="website">
@@ -18,7 +18,7 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Estimer un budget IA, par lebonmodel">
-<meta name="twitter:description" content="Comparez en direct l'intelligence et le coût des modèles OpenAI et Anthropic pour votre usage.">
+<meta name="twitter:description" content="Comparez en direct l'intelligence et le coût des modèles des grands éditeurs d'IA pour votre usage.">
 <meta name="twitter:image" content="https://lebonmodel.numenys.fr/og-lebonmodel.png">
 <meta name="theme-color" content="#14161a">
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
@@ -27,6 +27,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Raleway:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="budget.css">
 <link rel="stylesheet" href="../assets/ai-search.css">
+<link rel="stylesheet" href="../assets/providers.css">
 <script>
   (function () {
     try {
@@ -71,7 +72,7 @@
 <main id="contenu">
   <section class="hero wrap" aria-labelledby="titre">
     <h1 id="titre">Combien va vous coûter l'IA&#8239;?</h1>
-    <p class="lede">Indiquez votre usage et votre volume. On estime ce que coûterait chaque modèle d'OpenAI et d'Anthropic chaque mois, et quel abonnement suffit. Pour choisir un modèle tâche par tâche, voyez <a href="../">la page principale</a>.</p>
+    <p class="lede">Indiquez votre usage et votre volume. On estime ce que coûterait chaque modèle des grands éditeurs d'IA chaque mois, et quel abonnement suffit. Pour choisir un modèle tâche par tâche, voyez <a href="../">la page principale</a>.</p>
     <p class="stamp">Prix et scores vérifiés le <span id="updated">10 octobre 2026</span></p>
 
     <form class="ai-search" id="ai-search" role="search" autocomplete="off" hidden>
@@ -133,6 +134,12 @@
         </div>
       </div>
 
+      <div class="providers-bar">
+        <p class="providers-label" id="providers-label">Éditeurs comparés</p>
+        <div class="providers" id="providers" role="group" aria-labelledby="providers-label" aria-describedby="providers-note"></div>
+        <p class="providers-note" id="providers-note"></p>
+      </div>
+
       <div class="duo" id="duo" aria-live="polite"></div>
 
       <figure class="map" id="map" aria-labelledby="map-title">
@@ -141,8 +148,7 @@
           <p id="map-sub">Chaque point est un modèle, à son réglage le plus économique qui atteint votre niveau.</p>
         </figcaption>
         <ul class="legend-row" aria-label="Légende">
-          <li><svg viewBox="0 0 14 14" aria-hidden="true"><circle class="mk-openai" cx="7" cy="7" r="5.5"/></svg>OpenAI</li>
-          <li><svg viewBox="0 0 14 14" aria-hidden="true"><rect class="mk-anthropic" x="1.5" y="1.5" width="11" height="11" rx="2.5"/></svg>Anthropic</li>
+          <li class="legend-providers"><ul id="legend-providers"></ul></li>
           <li><svg viewBox="0 0 14 14" aria-hidden="true"><path class="mk-threshold" d="M7 0v14"/></svg>Votre seuil</li>
           <li><svg viewBox="0 0 14 14" aria-hidden="true"><circle class="mk-halo" cx="7" cy="7" r="5.5"/></svg>Le plus adapté par éditeur</li>
         </ul>
@@ -163,6 +169,7 @@
           <p>Du moins cher au plus cher parmi ceux qui atteignent votre niveau. Touchez une ligne pour le détail.</p>
         </div>
         <ol class="ranking-list" id="ranking"></ol>
+        <button type="button" class="rank-more" id="rank-more" aria-controls="ranking" hidden></button>
       </section>
     </div>
   </section>
@@ -188,7 +195,7 @@
       </div>
       <div>
         <h3>Les abonnements</h3>
-        <p>Pour chaque offre, nous regardons les réglages réellement accessibles dans l'application, puis nous comparons votre usage à son coût en API pour signaler un risque de plafond. Ni OpenAI ni Anthropic ne publient leurs quotas en tokens&nbsp;: ce repère est une estimation de Numenys, pas une donnée des éditeurs.</p>
+        <p>Pour chaque offre, nous regardons les réglages réellement accessibles dans l'application, puis nous comparons votre usage à son coût en API pour signaler un risque de plafond. Aucun éditeur ne publie ses quotas en tokens&nbsp;: ce repère est une estimation de Numenys, pas une donnée des éditeurs.</p>
       </div>
       <div>
         <h3>Ce que l'outil ne dit pas</h3>
@@ -214,7 +221,7 @@
       <li><a href="https://www.linkedin.com/in/thibaut-picard-destelan">Thibaut Picard Destelan sur LinkedIn</a></li>
       <li><a href="https://github.com/thibpic/lebonmodel">Code et données sur GitHub</a></li>
     </ul>
-    <p class="fine">Outil indépendant, sans lien commercial avec OpenAI ni Anthropic. Les noms des modèles appartiennent à leurs éditeurs. Estimations indicatives, hors TVA pour l'API.</p>
+    <p class="fine">Outil indépendant, sans lien commercial avec les éditeurs comparés. Les noms des modèles appartiennent à leurs éditeurs. Estimations indicatives, hors TVA pour l'API.</p>
   </div>
 </footer>
 
@@ -222,6 +229,7 @@
 
 <noscript><p class="noscript">Cette page a besoin de JavaScript pour calculer les estimations.</p></noscript>
 <!--PAGE-END-->
+<script src="../assets/providers.js"></script>
 <script src="budget-data.js"></script>
 <script src="budget-app.js"></script>
 <script src="../assets/ai-config.js"></script>

@@ -1,6 +1,6 @@
 /*
-  lebonmodel, barre de recherche propulsée par Claude Haiku 5.5.
-  Le navigateur n'appelle jamais l'API d'Anthropic : il envoie la demande au proxy
+  lebonmodel, barre de recherche : un modèle de langage traduit la demande en réglages.
+  Le navigateur n'appelle jamais d'API de modèle : il envoie la demande au proxy
   (dossier worker/), qui renvoie uniquement des valeurs fermées. La page les
   revalide (window.LBM_PAGE.apply) avant de s'en servir, et tout texte est
   affiché avec textContent, jamais interprété comme du HTML.

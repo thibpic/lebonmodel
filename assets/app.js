@@ -5,11 +5,16 @@
   var M = window.LBM_MODELS, TASKS = window.LBM_TASKS, EV = window.LBM_EVALS, LEVELS = window.LBM_LEVELS,
     CUTS = window.LBM_CUTS, DOMS = window.LBM_DOMAINS, CATS = window.LBM_CATEGORIES, PLANS = window.LBM_PLANS,
     TIERS = window.LBM_TIERS, SOURCES = window.LBM_SOURCES, FX = window.LBM_FX;
-  if (!M || !TASKS || !PLANS) return;
+  var PROVIDERS = (window.LBM_PROVIDERS || []).filter(function (p) { return M && M.some(function (m) { return m.provider === p.id; }); });
+  if (!M || !TASKS || !PLANS || !PROVIDERS.length) return;
 
   var NB = " ", NNB = " ";
-  var PROV = { openai: "OpenAI", anthropic: "Anthropic" };
-  var KEY = { openai: "oa", anthropic: "an" };
+  /* Éditeurs : on en compare MAX_SHOWN au plus côte à côte, pour garder une page lisible */
+  var MAX_SHOWN = 4, RANK_MAX = 10;
+  var PROV = {}; PROVIDERS.forEach(function (p) { PROV[p.id] = p; });
+  var PIDS = PROVIDERS.map(function (p) { return p.id; });
+  var DEFAULT_SHOWN = PROVIDERS.filter(function (p) { return p.byDefault; }).map(function (p) { return p.id; }).slice(0, MAX_SHOWN);
+  if (!DEFAULT_SHOWN.length) DEFAULT_SHOWN = PIDS.slice(0, 3);
 
   /* ---------- Raccourcis ---------- */
   function $(s, el) { return (el || document).querySelector(s); }
@@ -29,19 +34,35 @@
 
   var byId = {}; M.forEach(function (m) { byId[m.id] = m; });
   var taskById = {}; TASKS.forEach(function (t) { taskById[t.id] = t; });
-  var planIdx = { openai: {}, anthropic: {} };
-  ["openai", "anthropic"].forEach(function (p) { PLANS[p].forEach(function (pl) { planIdx[p][pl.id] = pl; }); });
+  var planIdx = {};
+  PIDS.forEach(function (p) { planIdx[p] = {}; (PLANS[p] || []).forEach(function (pl) { planIdx[p][pl.id] = pl; }); });
+  function visiblePlans(p) { return (PLANS[p] || []).filter(function (pl) { return !pl.hidden; }); }
+  function planOk(p, id) { return id === "all" || id === "none" || (planIdx[p][id] && !planIdx[p][id].hidden); }
 
   /* ---------- État ---------- */
-  var state = { task: "pdf", oa: "all", an: "all", exig: 0, sort: "fit", showAll: false, cur: "EUR", chatOnly: false, open: {}, hl: null, cat: null };
+  var state = { task: "pdf", shown: DEFAULT_SHOWN.slice(), sub: {}, exig: 0, sort: "fit", showAll: false, showPrev: false, rankAll: false, cur: "EUR", chatOnly: false, open: {}, hl: null, cat: null };
+  PIDS.forEach(function (p) { state.sub[p] = "all"; });
+  function isShown(p) { return state.shown.indexOf(p) >= 0; }
+  function addShown(p) {
+    if (!PROV[p] || isShown(p)) return;
+    if (state.shown.length >= MAX_SHOWN) state.shown.pop();
+    state.shown.push(p);
+  }
 
   function readURL() {
     try {
       var p = new URLSearchParams(window.location.search);
       if (taskById[p.get("tache")]) state.task = p.get("tache");
-      var oa = p.get("chatgpt"), an = p.get("claude");
-      if (oa && (oa === "all" || oa === "none" || (planIdx.openai[oa] && !planIdx.openai[oa].hidden))) state.oa = oa;
-      if (an && (an === "all" || an === "none" || (planIdx.anthropic[an] && !planIdx.anthropic[an].hidden))) state.an = an;
+      var ed = p.get("editeurs");
+      if (ed) {
+        var list = ed.split(",").filter(function (id, i, a) { return PROV[id] && a.indexOf(id) === i; }).slice(0, MAX_SHOWN);
+        if (list.length) state.shown = list;
+      }
+      PROVIDERS.forEach(function (pv) {
+        var v = p.get(pv.key);
+        if (v && planOk(pv.id, v)) state.sub[pv.id] = v;
+      });
+      if (p.get("precedents") === "1") state.showPrev = true;
       var e = parseInt(p.get("exigence"), 10);
       if (e === -1 || e === 0 || e === 1) state.exig = e;
       if (p.get("tri") === "best") state.sort = "best";
@@ -54,8 +75,9 @@
     try {
       var p = new URLSearchParams();
       p.set("tache", state.task);
-      if (state.oa !== "all") p.set("chatgpt", state.oa);
-      if (state.an !== "all") p.set("claude", state.an);
+      if (state.shown.join(",") !== DEFAULT_SHOWN.join(",")) p.set("editeurs", state.shown.join(","));
+      PROVIDERS.forEach(function (pv) { if (isShown(pv.id) && state.sub[pv.id] !== "all") p.set(pv.key, state.sub[pv.id]); });
+      if (state.showPrev) p.set("precedents", "1");
       if (state.exig) p.set("exigence", String(state.exig));
       if (state.sort !== "fit") p.set("tri", state.sort);
       if (state.cur !== "EUR") p.set("devise", state.cur);
@@ -98,13 +120,16 @@
   }
   function pct(v) { return nf0.format(Math.round(v * 100)) + NB + "%"; }
 
-  var EFF = { none: "sans réflexion", reasoning: "réflexion activée", low: "effort faible", medium: "effort moyen", high: "effort élevé", xhigh: "effort très élevé", max: "effort maximal" };
-  var EFF_WITH = { none: "sans réflexion", reasoning: "avec la réflexion activée", low: "avec un effort faible", medium: "avec un effort moyen", high: "avec un effort élevé", xhigh: "avec un effort très élevé", max: "avec un effort maximal" };
+  var EFF = { "default": "réglage unique", none: "sans réflexion", reasoning: "réflexion activée", low: "effort faible", medium: "effort moyen", high: "effort élevé", xhigh: "effort très élevé", max: "effort maximal" };
+  var EFF_WITH = { "default": "(un seul réglage)", none: "sans réflexion", reasoning: "avec la réflexion activée", low: "avec un effort faible", medium: "avec un effort moyen", high: "avec un effort élevé", xhigh: "avec un effort très élevé", max: "avec un effort maximal" };
   function job(t, n) { return DOMS[t.domain][n - 1]; }
   function isFem(word) { return /^plume/.test(word); }
   function dUn(word) { return (isFem(word) ? "d'une " : "d'un ") + word; }
   function unA(word) { return (isFem(word) ? "une " : "un ") + word; }
   function markHTML(p) { return '<span class="mark ' + p + '" aria-hidden="true"></span>'; }
+  function provName(p) { return PROV[p] ? PROV[p].name : p; }
+  /* « d'OpenAI », « de Google » */
+  function deProv(p) { var n = provName(p); return (/^[AEIOUYH]/i.test(n) ? "d'" : "de ") + n; }
 
   /* ---------- Calculs ---------- */
   function score(lv, w) { var s = 0, tw = 0; for (var k in w) { s += lv.s[k] * w[k]; tw += w[k]; } return s / tw; }
@@ -174,18 +199,20 @@
     surfaceCache[ck] = out;
     return out;
   }
+  /* Sans agent de travail chez l'éditeur, le travail de bureau se fait dans la conversation */
   function surfacesFor(provider, t) {
-    var out = [];
+    var out = [], places = PROV[provider].places;
     t.where.forEach(function (w) {
       if (state.chatOnly && w !== "chat") return;
-      var s = provider === "anthropic" && w === "work" ? "chat" : w;
+      var s = w === "work" && !places.work ? "chat" : w;
       if (out.indexOf(s) < 0) out.push(s);
     });
     return out;
   }
+  /* ctx : un nombre (tokens) ou { instant, think } selon le mode ; null = non publié */
   function ctxLimit(provider, plan, surface, r) {
-    if (provider === "openai" && surface === "chat" && plan.ctx) {
-      var lim = r.lv.e === "none" ? plan.ctx.instant : plan.ctx.think;
+    if (surface === "chat" && plan.ctx) {
+      var lim = typeof plan.ctx === "number" ? plan.ctx : r.lv.e === "none" ? plan.ctx.instant : plan.ctx.think;
       return lim == null ? null : Math.min(lim, r.m.ctxTok);
     }
     return r.m.ctxTok;
@@ -209,7 +236,7 @@
     return { surface: "api", label: "", limit: r.m.ctxTok, fits: !t.ctx || t.ctx <= r.m.ctxTok, plan: null };
   }
   function isApiTask(t) { return t.where.indexOf("api") >= 0; }
-  function selection(provider) { return state[KEY[provider]]; }
+  function selection(provider) { return state.sub[provider] || "all"; }
   function access(r, t) {
     var sel = selection(r.m.provider);
     if (sel === "none") return null;
@@ -241,10 +268,10 @@
     rows.forEach(function (r) { r.acc = access(r, t); });
     var need = needLevel(t);
     var picks = {};
-    ["openai", "anthropic"].forEach(function (p) {
+    PIDS.forEach(function (p) {
       picks[p] = selection(p) === "none" ? null : choose(rows.filter(function (r) { return r.m.provider === p; }), need);
     });
-    var reps = M.map(function (m) {
+    var reps = M.filter(function (m) { return isShown(m.provider); }).map(function (m) {
       var own = rows.filter(function (r) { return r.m === m; });
       var c = choose(own, need);
       var best = strongest(own);
@@ -252,14 +279,28 @@
       var cheapestOk = own.filter(function (r) { return r.n >= need; }).sort(function (a, b) { return a.c - b.c; })[0];
       return { m: m, fit: c, best: best, usable: !!c, ghost: cheapestOk || anyRow, own: own };
     });
-    return { t: t, rows: rows, need: need, picks: picks, reps: reps };
+    /* Toutes marques confondues : le meilleur choix chez un éditeur non affiché, s'il bat les éditeurs affichés */
+    var outside = null, shownPicks = state.shown.map(function (p) { return picks[p]; }).filter(Boolean);
+    PIDS.forEach(function (p) {
+      if (isShown(p) || !picks[p]) return;
+      var pk = picks[p];
+      if (!outside || (pk.ok && !outside.ok) || (pk.ok === outside.ok && (pk.ok ? pk.r.c < outside.r.c : pk.r.q > outside.r.q))) outside = pk;
+    });
+    if (outside) {
+      var okShown = shownPicks.filter(function (pk) { return pk.ok; });
+      var beats;
+      if (outside.ok) beats = !okShown.length || okShown.every(function (pk) { return outside.r.c < pk.r.c * 0.7; });
+      else beats = !okShown.length && shownPicks.every(function (pk) { return outside.r.n > pk.r.n; });
+      if (!beats) outside = null;
+    }
+    return { t: t, rows: rows, need: need, picks: picks, reps: reps, outside: outside };
   }
 
   /* Pour atteindre le niveau : quelle offre du même éditeur, sinon l'API */
   function upgradeHint(provider, t, need, rows) {
     if (isApiTask(t)) return "";
     var own = rows.filter(function (r) { return r.m.provider === provider; });
-    var order = PLANS[provider].filter(function (p) { return !p.hidden; });
+    var order = visiblePlans(provider);
     var cur = selection(provider);
     var curIdx = -1;
     order.forEach(function (p, i) { if (p.id === cur) curIdx = i; });
@@ -273,43 +314,43 @@
     return "";
   }
 
+  /* Prix publiés en euros TTC pour la France quand l'éditeur les donne (eur), sinon en dollars HT convertis */
   function priceText(provider, plan) {
     if (!plan.usd && !plan.eur) return "gratuit";
-    if (provider === "openai") {
-      if (state.cur === "USD") return nf0.format(plan.usd) + NB + "$" + (plan.perSeat ? " par personne" : "") + " par mois";
-      return nf0.format(plan.eur) + NB + "€" + (plan.perSeat ? " par personne" : "") + " par mois";
+    var per = (plan.perSeat ? " par personne" : "") + " par mois";
+    if (plan.eur != null) {
+      if (state.cur === "EUR") return nf0.format(plan.eur) + NB + "€" + per;
+      if (plan.usd != null) return nf0.format(plan.usd) + NB + "$" + per;
+      return "≈" + NB + nf0.format(Math.round(plan.eur / FX.usdToEur)) + NB + "$" + per;
     }
-    if (state.cur === "USD") return nf0.format(plan.usd) + NB + "$ HT" + (plan.perSeat ? " par personne" : "") + " par mois";
+    if (state.cur === "USD") return nf0.format(plan.usd) + NB + "$ HT" + per;
     var ttc = plan.usd * FX.usdToEur * (1 + FX.vat);
-    return "≈" + NB + nf0.format(Math.round(ttc)) + NB + "€" + (plan.perSeat ? " par personne" : "") + " par mois";
+    return "≈" + NB + nf0.format(Math.round(ttc)) + NB + "€" + per;
   }
 
+  /* Où faire la tâche, dans les mots de l'éditeur (places : conversation, agent de travail, agent de code) */
+  function placeOf(p, surface) { var pl = PROV[p].places; return pl[surface] || pl.chat; }
   function whereSentence(r) {
     var a = r.acc, m = r.m, lv = r.lv;
     if (!a) return "";
     if (a.surface === "api") return "Via l'API, appelez " + m.name + " " + EFF_WITH[lv.e] + ".";
-    if (m.provider === "openai") {
-      if (a.surface === "chat") return "Dans ChatGPT, choisissez le mode " + a.label + (a.label === "Pro" ? " (GPT-6 Pro)" : "") + ".";
-      if (a.surface === "work") return "Dans ChatGPT Work, choisissez " + m.name + " " + EFF_WITH[lv.e] + ".";
-      if (a.label) return "Dans Codex, avec l'accès limité de votre offre (" + m.name + ").";
-      return "Dans Codex, choisissez " + m.name + " " + EFF_WITH[lv.e] + ".";
+    var place = placeOf(m.provider, a.surface);
+    if (a.surface === "chat" && a.label) {
+      var model = a.label === "Pro" && m.provider === "openai" ? "GPT-6 Pro" : m.name;
+      return "Dans " + place + ", choisissez le mode " + a.label + " (" + model + ").";
     }
-    if (a.surface === "code") return "Dans Claude Code, choisissez " + m.short + " " + EFF_WITH[lv.e] + ".";
-    return "Dans l'appli Claude, choisissez " + m.short + " " + EFF_WITH[lv.e] + ".";
+    if (a.surface === "code" && a.label) return "Dans " + place + ", avec l'accès limité de votre offre (" + m.name + ").";
+    return "Dans " + place + ", choisissez " + m.name + " " + EFF_WITH[lv.e] + ".";
   }
   function whereShort(r) {
     var a = r.acc;
     if (!a) return "hors de vos abonnements";
     if (a.surface === "api") return "API";
-    if (r.m.provider === "openai") {
-      if (a.surface === "chat") return "ChatGPT, mode " + a.label;
-      if (a.surface === "work") return "ChatGPT Work";
-      return "Codex";
-    }
-    return a.surface === "code" ? "Claude Code" : "Appli Claude";
+    var place = cap(placeOf(r.m.provider, a.surface).replace(/^l'/, ""));
+    return a.surface === "chat" && a.label ? place + ", mode " + a.label : place;
   }
   function settingText(r) {
-    if (r.acc && r.acc.surface === "chat" && r.m.provider === "openai" && r.acc.label) return "mode " + r.acc.label;
+    if (r.acc && r.acc.surface === "chat" && r.acc.label) return "mode " + r.acc.label;
     return EFF[r.lv.e];
   }
 
@@ -343,17 +384,31 @@
   }
 
   /* ---------- Rendu : réglages ---------- */
+  function renderProviders() {
+    var full = state.shown.length >= MAX_SHOWN;
+    $("#providers").innerHTML = PROVIDERS.map(function (pv) {
+      var on = isShown(pv.id), blocked = !on && full;
+      return '<button type="button" class="prov" data-prov="' + pv.id + '" aria-pressed="' + on + '"' + (blocked ? ' aria-disabled="true" title="' + MAX_SHOWN + ' éditeurs au plus : retirez-en un"' : "") + ">" +
+        markHTML(pv.id) + esc(pv.name) + "</button>";
+    }).join("");
+    $("#providers-note").textContent = full ? MAX_SHOWN + " éditeurs au plus côte à côte : retirez-en un pour en ajouter un autre." : "Jusqu'à " + MAX_SHOWN + " éditeurs côte à côte.";
+  }
   function renderSelects() {
-    ["openai", "anthropic"].forEach(function (p) {
-      var sel = $(p === "openai" ? "#sel-openai" : "#sel-anthropic");
-      var opts = [["all", "Tout comparer"]];
-      PLANS[p].forEach(function (pl) { if (!pl.hidden) opts.push([pl.id, pl.name]); });
-      opts.push(["none", p === "openai" ? "Je n'utilise pas ChatGPT" : "Je n'utilise pas Claude"]);
-      sel.innerHTML = opts.map(function (o) { return '<option value="' + o[0] + '"' + (state[KEY[p]] === o[0] ? " selected" : "") + ">" + esc(o[1]) + "</option>"; }).join("");
-    });
+    renderProviders();
+    $("#subs").innerHTML = state.shown.map(function (p) {
+      var pv = PROV[p], plans = visiblePlans(p);
+      var opts = [["all", plans.length ? "Tout comparer" : "API seulement"]];
+      plans.forEach(function (pl) { opts.push([pl.id, pl.name]); });
+      opts.push(["none", "Je n'utilise pas " + pv.app]);
+      return '<div class="setting"><label for="sel-' + p + '">' + markHTML(p) + "Votre " + esc(pv.app) + "</label>" +
+        '<span class="select"><select id="sel-' + p + '" data-prov="' + p + '">' +
+        opts.map(function (o) { return '<option value="' + o[0] + '"' + (selection(p) === o[0] ? " selected" : "") + ">" + esc(o[1]) + "</option>"; }).join("") +
+        "</select></span></div>";
+    }).join("");
     $("#exig-" + (state.exig === -1 ? "low" : state.exig === 1 ? "high" : "mid")).checked = true;
     $("#sort-" + state.sort).checked = true;
     $("#chat-only").checked = state.chatOnly;
+    $("#show-prev").checked = state.showPrev;
   }
 
   /* ---------- Rendu : résultat ---------- */
@@ -370,7 +425,7 @@
     var note = $("#api-note");
     if (isApiTask(t)) {
       note.hidden = false;
-      note.textContent = fr("Cette tâche s'automatise par l'API : vos abonnements ChatGPT ou Claude ne s'appliquent pas, on compare donc les prix à l'usage.");
+      note.textContent = fr("Cette tâche s'automatise par l'API : vos abonnements ne s'appliquent pas, on compare donc les prix à l'usage.");
     } else note.hidden = true;
   }
 
@@ -382,20 +437,20 @@
 
   function renderPicks(R) {
     var t = R.t, need = R.need, html = "";
-    ["openai", "anthropic"].forEach(function (p) {
+    state.shown.forEach(function (p) {
       var sel = selection(p), pick = R.picks[p];
-      html += '<article class="pick" data-provider="' + p + '"><p class="pick-top">' + markHTML(p) + "Chez " + PROV[p] + "</p>";
+      html += '<article class="pick" data-provider="' + p + '"><p class="pick-top">' + markHTML(p) + "Chez " + esc(provName(p)) + "</p>";
       if (sel === "none") {
-        html += '<p class="pick-empty">Vous avez indiqué ne pas utiliser ' + (p === "openai" ? "ChatGPT" : "Claude") + '. Choisissez «' + NB + "Tout comparer" + NB + "» pour le voir.</p></article>";
+        html += '<p class="pick-empty">Vous avez indiqué ne pas utiliser ' + esc(PROV[p].app) + '. Choisissez «' + NB + "Tout comparer" + NB + "» pour le voir.</p></article>";
         return;
       }
       if (!pick && state.chatOnly && t.where.indexOf("chat") < 0 && !isApiTask(t) && sel !== "all") {
-        html += '<p class="pick-empty">' + esc(fr("Cette tâche se fait dans un agent (" + (p === "openai" ? "ChatGPT Work ou Codex" : "Claude Code") + "), pas dans la conversation.")) + "</p></article>";
+        html += '<p class="pick-empty">' + esc(fr("Cette tâche se fait dans un agent" + (PROV[p].agents ? " (" + PROV[p].agents + ")" : "") + ", pas dans la conversation.")) + "</p></article>";
         return;
       }
       if (!pick) {
         var plan0 = planOf(p, sel);
-        html += '<p class="pick-empty">' + esc(plan0 ? plan0.name : PROV[p]) + " ne propose rien pour cette tâche. " + esc(fr(upgradeHint(p, t, need, R.rows) ? "Il faut passer à " + upgradeHint(p, t, need, R.rows) + "." : "")) + "</p></article>";
+        html += '<p class="pick-empty">' + esc(plan0 ? plan0.name : provName(p)) + " ne propose rien pour cette tâche. " + esc(fr(upgradeHint(p, t, need, R.rows) ? "Il faut passer à " + upgradeHint(p, t, need, R.rows) + "." : "")) + "</p></article>";
         return;
       }
       var r = pick.r;
@@ -416,7 +471,7 @@
       if (r.acc && r.acc.plan && sel !== "all") {
         var plan = r.acc.plan;
         var vol = plan.volume.filter(function (v) {
-          if (r.acc.surface === "chat" && /Work|Codex|Claude Code/.test(v) && p === "openai") return false;
+          if (r.acc.surface === "chat" && PROV[p].agentWords && PROV[p].agentWords.some(function (w) { return v.indexOf(w) >= 0; })) return false;
           return true;
         }).slice(0, 2);
         if (vol.length) notes.push(esc(fr("Avec " + plan.name + " : " + vol.join(", ") + ".")));
@@ -426,11 +481,28 @@
       }
       if ((t.w.acc || t.w.nohall) && r.lv.hall != null) notes.push(esc(fr("Quand il ne sait pas, il invente une réponse dans " + pct(r.lv.hall) + " des cas (AA-Omniscience).")));
       if (r.acc && r.acc.label === "Pro") notes.push(esc("Le mode Pro n'est pas évalué : nous le montrons comme GPT-6 Astra au maximum."));
-      if (r.est || r.lv.est) notes.push(esc("Note en partie estimée à partir du même modèle."));
+      if (r.est || r.lv.est) notes.push(esc(r.lv.costEst && r.m.provider !== "anthropic" ? "Note en partie estimée : Artificial Analysis ne publie pas toutes ses évaluations pour ce modèle." : "Note en partie estimée à partir du même modèle."));
       if (notes.length) html += '<div class="pick-notes">' + notes.map(function (n) { return "<p>" + n + "</p>"; }).join("") + "</div>";
       html += "</article>";
     });
-    $("#picks").innerHTML = html;
+    var host = $("#picks");
+    host.innerHTML = html;
+    host.setAttribute("data-n", String(state.shown.length));
+    renderOutside(R);
+  }
+
+  /* Encart « toutes marques confondues » : un éditeur non affiché fait mieux ou moins cher */
+  function renderOutside(R) {
+    var box = $("#outside"), o = R.outside;
+    if (!o) { box.hidden = true; box.innerHTML = ""; return; }
+    var r = o.r, p = r.m.provider, txt;
+    var anyOk = state.shown.some(function (x) { return R.picks[x] && R.picks[x].ok; });
+    if (o.ok) txt = "Chez " + provName(p) + ", " + r.m.name + " (" + settingText(r) + ") atteint " + (anyOk ? "aussi " : "") + "le niveau " + LEVELS[R.need - 1] + ", pour " + money(r.c) + " la tâche" + (r.acc && r.acc.surface !== "api" && r.acc.plan ? ", dans " + r.acc.plan.name : "") + ".";
+    else txt = "Chez " + provName(p) + ", " + r.m.name + " (" + settingText(r) + ") va plus loin sur cette tâche : niveau " + LEVELS[r.n - 1] + ".";
+    var full = state.shown.length >= MAX_SHOWN;
+    box.innerHTML = '<p><span class="outside-k">Toutes marques confondues</span> ' + esc(fr(txt)) + "</p>" +
+      '<button type="button" class="outside-add" data-prov="' + p + '">' + markHTML(p) + esc((full ? "Remplacer " + provName(state.shown[state.shown.length - 1]) + " par " : "Ajouter ") + provName(p)) + "</button>";
+    box.hidden = false;
   }
 
   /* ---------- Carte ---------- */
@@ -464,9 +536,9 @@
     var pw = W - Mg.l - Mg.r, ph = H - Mg.t - Mg.b;
     var t = R.t;
 
-    var shown = R.reps.map(function (rp) { return rp.fit ? rp.fit.r : rp.ghost; });
+    var shown = R.reps.filter(repVisible.bind(null, R)).map(function (rp) { return rp.fit ? rp.fit.r : rp.ghost; });
     var pool = shown.slice();
-    if (state.showAll) pool = pool.concat(R.rows);
+    if (state.showAll) pool = pool.concat(R.rows.filter(function (r) { return isShown(r.m.provider) && repVisible(R, { m: r.m }); }));
     var qmin = Math.min.apply(null, pool.map(function (r) { return r.q; }));
     var XMIN = clamp(Math.floor((qmin * 100 - 6) / 10) * 10, 0, 80), XMAX = 100;
     function xs(v) { return Mg.l + (clamp(v, XMIN, XMAX) - XMIN) / (XMAX - XMIN) * pw; }
@@ -525,6 +597,7 @@
     var gc = C.g.curves; gc.textContent = "";
     if (state.showAll) {
       M.forEach(function (m) {
+        if (!isShown(m.provider) || !repVisible(R, { m: m })) return;
         var own = R.rows.filter(function (r) { return r.m === m; }).sort(function (a, b) { return a.q - b.q; });
         if (own.length < 2) return;
         var off = !own.some(function (r) { return r.acc && r.acc.fits; });
@@ -535,9 +608,12 @@
 
     // Points
     var obstacles = [], items = [];
-    var pickRows = [R.picks.openai && R.picks.openai.r, R.picks.anthropic && R.picks.anthropic.r];
+    var pickRows = state.shown.map(function (p) { return R.picks[p] && R.picks[p].r; });
+    var seen = {};
     R.reps.forEach(function (rp) {
+      if (!repVisible(R, rp)) return;
       var r = rp.fit ? rp.fit.r : rp.ghost, id = rp.m.id;
+      seen[id] = true;
       var x = xs(r.q * 100), y = ys(toCur(r.c));
       var g = C.pts[id], fresh = false;
       if (!g) {
@@ -545,8 +621,7 @@
         g = svgEl("g", { "class": "pt", tabindex: "0", "data-model": id }, C.g.points);
         svgEl("circle", { "class": "hit", r: 15 }, g);
         svgEl("circle", { "class": "halo", r: 13 }, g);
-        if (rp.m.provider === "openai") svgEl("circle", { "class": "shape", r: 6.5 }, g);
-        else svgEl("rect", { "class": "shape", x: -6, y: -6, width: 12, height: 12, rx: 3 }, g);
+        shapeEl(PROV[rp.m.provider].shape, g);
         g.addEventListener("pointerenter", function () { showTip(id); });
         g.addEventListener("pointerleave", hideTip);
         g.addEventListener("focus", function () { showTip(id); });
@@ -565,6 +640,13 @@
       g._r = r; g._rp = rp; g._x = x; g._y = y;
       obstacles.push({ x: x - 9, y: y - 9, w: 18, h: 18, id: id });
       items.push({ id: id, x: x, y: y, text: rp.m.short, pick: isPick, off: off, pr: isPick ? 3 : off ? 1 : 2 });
+    });
+
+    /* Points des modèles masqués (éditeur retiré, génération précédente) */
+    Object.keys(C.pts).forEach(function (id) {
+      var hide = !seen[id];
+      C.pts[id].style.display = hide ? "none" : "";
+      if (C.lbls[id]) C.lbls[id].style.display = hide ? "none" : "";
     });
 
     var placed = [];
@@ -597,10 +679,33 @@
       requestAnimationFrame(function () { tl.style.transition = ""; });
     });
 
-    var p1 = R.picks.openai, p2 = R.picks.anthropic;
-    C.desc.textContent = "Pour " + t.label + ". " +
-      (p1 ? "Chez OpenAI : " + p1.r.m.name + ", note " + Math.round(p1.r.q * 100) + ", " + money(p1.r.c) + ". " : "") +
-      (p2 ? "Chez Anthropic : " + p2.r.m.name + ", note " + Math.round(p2.r.q * 100) + ", " + money(p2.r.c) + "." : "");
+    C.desc.textContent = "Pour " + t.label + ". " + state.shown.map(function (p) {
+      var pk = R.picks[p];
+      return pk ? "Chez " + provName(p) + " : " + pk.r.m.name + ", note " + Math.round(pk.r.q * 100) + ", " + money(pk.r.c) + "." : "";
+    }).join(" ");
+    renderLegend();
+  }
+
+  function shapeEl(name, g) {
+    var sh = window.LBM_SHAPES[name] || window.LBM_SHAPES.circle, a = { "class": "shape" };
+    for (var k in sh[1]) a[k] = sh[1][k];
+    return svgEl(sh[0], a, g);
+  }
+  function legendShape(p) {
+    var svg = svgEl("svg", { viewBox: "-8 -8 16 16", "aria-hidden": "true" });
+    var g = svgEl("g", { "class": "pt " + p }, svg);
+    shapeEl(PROV[p].shape, g);
+    return svg.outerHTML;
+  }
+  function renderLegend() {
+    $("#legend-providers").innerHTML = state.shown.map(function (p) { return "<li>" + legendShape(p) + esc(provName(p)) + "</li>"; }).join("");
+  }
+
+  /* Génération précédente : masquée, sauf si c'est le choix retenu chez son éditeur ou si on la demande */
+  function repVisible(R, rp) {
+    if (state.showPrev || rp.m.generation !== "précédente") return true;
+    var pk = R.picks[rp.m.provider];
+    return !!(pk && pk.r.m === rp.m);
   }
 
   function showTip(id) {
@@ -643,19 +748,18 @@
   }
   function plansWith(m) {
     var out = [];
-    PLANS[m.provider].forEach(function (pl) {
-      if (pl.hidden) return;
+    visiblePlans(m.provider).forEach(function (pl) {
       var inChat = Object.keys(surfaceList(pl, m.provider, "chat")).some(function (k) { return k.indexOf(m.id + "|") === 0; });
       var inOther = ["work", "code"].some(function (s) { return Object.keys(surfaceList(pl, m.provider, s)).some(function (k) { return k.indexOf(m.id + "|") === 0; }); });
       if (inChat) out.push(pl.short);
-      else if (inOther) out.push(pl.short + (m.provider === "openai" ? " (Work, Codex)" : " (Claude Code)"));
+      else if (inOther) out.push(pl.short + (PROV[m.provider].agents ? " (" + PROV[m.provider].agents.replace(" ou ", ", ") + ")" : ""));
     });
     return out.length ? out.join(", ") : "API uniquement";
   }
 
   function renderRanking(R) {
     var t = R.t, need = R.need;
-    var reps = R.reps.map(function (rp) {
+    var reps = R.reps.filter(repVisible.bind(null, R)).map(function (rp) {
       var r = rp.fit ? (state.sort === "best" ? rp.best : rp.fit.r) : rp.ghost;
       return { rp: rp, r: r, usable: !!rp.fit, ok: rp.fit && r.n >= need };
     });
@@ -691,10 +795,17 @@
         (r.est ? "<div><dt>Précision</dt><dd>Note en partie estimée</dd></div>" : "") +
         "</dl></details></li>";
     }
-    var html = usable.map(function (x, i) { return row(x, i, false); }).join("");
-    if (out.length) html += '<li class="rank-sep">Hors de vos abonnements</li>' + out.map(function (x, i) { return row(x, i, true); }).join("");
+    /* Replié à RANK_MAX lignes : la tête du classement suffit le plus souvent */
+    var total = usable.length + out.length, room = state.rankAll ? total : RANK_MAX;
+    var u = usable.slice(0, room), o = out.slice(0, Math.max(0, room - u.length));
+    var html = u.map(function (x, i) { return row(x, i, false); }).join("");
+    if (o.length) html += '<li class="rank-sep">Hors de vos abonnements</li>' + o.map(function (x, i) { return row(x, i, true); }).join("");
     var list = $("#ranking");
     list.innerHTML = html;
+    var more = $("#rank-more"), hidden = total - u.length - o.length;
+    more.hidden = total <= RANK_MAX;
+    more.textContent = state.rankAll ? "Replier le classement" : "Voir " + (hidden > 1 ? "les " + hidden + " autres modèles" : "l'autre modèle");
+    more.setAttribute("aria-expanded", state.rankAll ? "true" : "false");
     $$(".row", list).forEach(function (row) {
       row.addEventListener("toggle", function () { state.open[row.getAttribute("data-model")] = row.open; });
       row.addEventListener("mouseenter", function () { var g = C.pts[row.getAttribute("data-model")]; if (g) g.classList.add("hl"); });
@@ -712,10 +823,17 @@
       host.innerHTML = '<p class="tier-cell empty">' + esc(fr("Tâche automatisée : elle passe par l'API, les abonnements ne s'appliquent pas.")) + "</p>";
       return;
     }
-    var html = '<div class="tier-row head" role="row"><div role="columnheader">Gamme</div><div role="columnheader">' + markHTML("openai") + 'ChatGPT</div><div role="columnheader">' + markHTML("anthropic") + "Claude</div></div>";
+    var cols = state.shown.filter(function (p) { return visiblePlans(p).length; });
+    if (!cols.length) {
+      host.innerHTML = '<p class="tier-cell empty">' + esc("Ces éditeurs ne proposent pas d'abonnement pour cette tâche.") + "</p>";
+      return;
+    }
+    host.style.setProperty("--cols", String(cols.length));
+    var html = '<div class="tier-row head" role="row"><div role="columnheader">Gamme</div>' + cols.map(function (p) { return '<div role="columnheader">' + markHTML(p) + esc(PROV[p].app) + "</div>"; }).join("") + "</div>";
     TIERS.forEach(function (tier) {
+      if (!cols.some(function (p) { return tier[p]; })) return;
       html += '<div class="tier-row" role="row"><div class="tier-label" role="rowheader">' + esc(tier.label) + "</div>";
-      ["openai", "anthropic"].forEach(function (p) {
+      cols.forEach(function (p) {
         var id = tier[p];
         if (!id) { html += '<div class="tier-cell empty" role="cell">Pas d\'offre à ce prix</div>'; return; }
         var plan = planOf(p, id);
@@ -729,8 +847,8 @@
         if (!best) body = '<p class="tier-best muted">Rien pour cette tâche dans cette offre.</p>';
         else {
           var rb = best.r;
-          var how = rb.m.provider === "openai" && best.a.surface === "chat" ? "mode " + best.a.label : rb.m.short + ", " + EFF[rb.lv.e];
-          var place = best.a.surface === "chat" ? (p === "openai" ? "ChatGPT" : "l'appli") : best.a.surface === "work" ? "Work" : (p === "openai" ? "Codex" : "Claude Code");
+          var how = best.a.surface === "chat" && best.a.label ? "mode " + best.a.label : rb.m.short + ", " + EFF[rb.lv.e];
+          var place = placeOf(p, best.a.surface);
           body = '<p class="tier-best">Jusqu\'au niveau <strong>' + LEVELS[rb.n - 1] + "</strong>, " + esc(job(t, rb.n)) + '<br><span class="muted">' + esc(cap(how)) + " dans " + esc(place) + "</span></p>";
           if (best.a.surface !== "chat" && t.where.indexOf("chat") >= 0) {
             var chatList = surfaceList(plan, p, "chat");
@@ -740,7 +858,8 @@
               return !t.ctx || lim == null || t.ctx <= lim;
             }).sort(function (a, b) { return b.r.q - a.r.q; })[0];
             if (bc) {
-              var lab = p === "openai" ? "mode " + chatList[bc.r.m.id + "|" + bc.r.lv.e] : bc.r.m.short + ", " + EFF[bc.r.lv.e];
+              var cl = chatList[bc.r.m.id + "|" + bc.r.lv.e];
+              var lab = cl ? "mode " + cl : bc.r.m.short + ", " + EFF[bc.r.lv.e];
               body += '<p class="tier-best muted">Dans la conversation&nbsp;: ' + esc(LEVELS[bc.r.n - 1]) + ", " + esc(lab) + "</p>";
             } else body += '<p class="tier-best muted">' + esc("Rien d'équivalent dans la conversation.") + "</p>";
           }
@@ -759,7 +878,7 @@
   function renderSources() {
     $("#sources").innerHTML = SOURCES.map(function (s) { return '<li><a href="' + esc(s.url) + '" target="_blank" rel="noopener">' + esc(s.label) + "</a></li>"; }).join("");
     var nf4 = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 4 });
-    $("#fx-note").textContent = "Taux de la BCE du " + FX.date + NB + ": 1" + NB + "$ = " + nf4.format(FX.usdToEur) + NB + "€. Prix de l'API hors taxes. ChatGPT publie ses prix en euros TTC pour la France ; Claude publie en dollars hors taxes, que nous convertissons avec 20" + NB + "% de TVA.";
+    $("#fx-note").textContent = "Taux de la BCE du " + FX.date + NB + ": 1" + NB + "$ = " + nf4.format(FX.usdToEur) + NB + "€. Prix de l'API hors taxes. Les abonnements sont repris en euros TTC quand l'éditeur les publie pour la France ; sinon en dollars hors taxes, que nous convertissons avec 20" + NB + "% de TVA.";
   }
 
   /* ---------- Mise à jour ---------- */
@@ -801,8 +920,35 @@
       selectTask(b.getAttribute("data-task"), window.innerWidth < 760);
     });
 
-    $("#sel-openai").addEventListener("change", function (e) { state.oa = e.target.value; state.open = {}; update(); });
-    $("#sel-anthropic").addEventListener("change", function (e) { state.an = e.target.value; state.open = {}; update(); });
+    $("#subs").addEventListener("change", function (e) {
+      var p = e.target.getAttribute("data-prov");
+      if (!p) return;
+      state.sub[p] = e.target.value; state.open = {}; update();
+    });
+    function toggleProvider(p) {
+      if (isShown(p)) {
+        if (state.shown.length === 1) return;
+        state.shown = state.shown.filter(function (x) { return x !== p; });
+      } else {
+        if (state.shown.length >= MAX_SHOWN) return;
+        state.shown.push(p);
+      }
+      state.open = {}; state.hl = null;
+      renderSelects(); update();
+    }
+    $("#providers").addEventListener("click", function (e) {
+      var b = e.target.closest(".prov"); if (!b) return;
+      toggleProvider(b.getAttribute("data-prov"));
+      var nb = $('.prov[data-prov="' + b.getAttribute("data-prov") + '"]'); if (nb) nb.focus();
+    });
+    $("#outside").addEventListener("click", function (e) {
+      var b = e.target.closest(".outside-add"); if (!b) return;
+      addShown(b.getAttribute("data-prov"));
+      state.open = {}; state.hl = null;
+      renderSelects(); update();
+    });
+    $("#show-prev").addEventListener("change", function (e) { state.showPrev = e.target.checked; update(); });
+    $("#rank-more").addEventListener("click", function () { state.rankAll = !state.rankAll; renderRanking(compute()); });
     $("#exigence").addEventListener("change", function (e) { state.exig = parseInt(e.target.value, 10); update(); });
     $("#chat-only").addEventListener("change", function (e) { state.chatOnly = e.target.checked; state.open = {}; update(); });
     $("#sort").addEventListener("change", function (e) { state.sort = e.target.value; update(); });
@@ -817,13 +963,13 @@
     });
   }
 
-  /* ---------- Recherche par Claude Haiku ----------
+  /* ---------- Recherche ----------
      Applique une intention renvoyée par le proxy (assets/ai-search.js).
      Chaque valeur est revalidée contre les données de la page ; la phrase
      de réponse est composée ici, à partir des seuls libellés du site. */
   var EXIG_IA = { premier_jet: -1, fiable: 0, sans_faute: 1 };
   var EXIG_TXT = { "-1": "un premier jet suffit", "1": "sans faute" };
-  function planOk(p, id) { return id === "none" || (planIdx[p][id] && !planIdx[p][id].hidden); }
+  function andList(a) { return a.length < 2 ? a.join("") : a.slice(0, -1).join(", ") + " et " + a[a.length - 1]; }
   window.LBM_PAGE = {
     id: "modele",
     resultAnchor: "#resultat",
@@ -831,8 +977,14 @@
       if (!it || !taskById[it.tache]) return null;
       state.task = it.tache;
       state.cat = taskById[it.tache].cat;
-      if (planOk("openai", it.chatgpt)) state.oa = it.chatgpt;
-      if (planOk("anthropic", it.claude)) state.an = it.claude;
+      if (it.editeur && PROV[it.editeur]) addShown(it.editeur);
+      PROVIDERS.forEach(function (pv) {
+        var v = it[pv.key];
+        if (v && v !== "all" && planOk(pv.id, v)) {
+          state.sub[pv.id] = v;
+          if (v !== "none") addShown(pv.id);
+        }
+      });
       if (EXIG_IA.hasOwnProperty(it.exigence)) state.exig = EXIG_IA[it.exigence];
       if (it.conversation_uniquement === "oui") state.chatOnly = true;
       if (it.conversation_uniquement === "non") state.chatOnly = false;
@@ -844,20 +996,20 @@
       update();
 
       var R = compute(), t = R.t, bits = [];
-      ["openai", "anthropic"].forEach(function (p) {
+      state.shown.forEach(function (p) {
         var sel = selection(p);
         if (sel !== "all" && sel !== "none") bits.push(planIdx[p][sel].name);
       });
       var head = "Tâche retenue : " + t.label.charAt(0).toLowerCase() + t.label.slice(1);
-      if (bits.length) head += ", avec " + bits.join(" et ");
+      if (bits.length) head += ", avec " + andList(bits);
       if (EXIG_TXT[String(state.exig)]) head += ", " + EXIG_TXT[String(state.exig)];
       head += ". Il faut au moins le niveau " + LEVELS[R.need - 1] + ".";
       var picks = [];
-      ["openai", "anthropic"].forEach(function (p) {
+      state.shown.forEach(function (p) {
         var pk = R.picks[p];
-        if (pk) picks.push(pk.r.m.name + " (" + settingText(pk.r) + ") chez " + PROV[p]);
+        if (pk) picks.push(pk.r.m.name + " (" + settingText(pk.r) + ") chez " + provName(p));
       });
-      var tail = picks.length ? " Le plus adapté : " + picks.join(", et ") + "." : " Aucun modèle de vos abonnements ne convient : voyez le classement ci-dessous.";
+      var tail = picks.length ? " Le plus adapté : " + andList(picks) + "." : " Aucun modèle de vos abonnements ne convient : voyez le classement ci-dessous.";
       return { phrase: fr(head + tail) };
     }
   };
