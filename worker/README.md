@@ -10,10 +10,10 @@ navigateur ──POST /recherche { page, q }──▶ Worker ──▶ OpenRoute
 
 ## Quel modèle
 
-- **OpenRouter**, dès que la variable `OPENROUTER_MODEL` (dans `wrangler.toml`, identifiant OpenRouter du modèle, par exemple `google/...`) **et** le secret `OPENROUTER_API_KEY` sont posés. Le Worker demande une sortie au schéma strict (`response_format: json_schema`, `strict: true`) et `provider.require_parameters: true`, pour qu'OpenRouter n'envoie la demande qu'à un hébergeur capable d'imposer le schéma ; `data_collection: "deny"` écarte ceux qui conservent les demandes.
+- **OpenRouter**, dès que la variable `OPENROUTER_MODEL` (dans `wrangler.toml`, aujourd'hui `~typesafe/jev-latest`, l'alias qui suit la dernière version de Jev) **et** le secret `OPENROUTER_API_KEY` sont posés. La sortie passe par un appel d'outil forcé (`tools` + `tool_choice`) dont les paramètres sont le schéma à valeurs fermées : Jev ne déclare pas `response_format`, mais déclare `tool_choice`. Le Worker revalide de toute façon chaque sortie. `data_collection: "deny"` écarte les hébergeurs qui conservent les demandes. Si OpenRouter échoue ou rend une sortie invalide et que `ANTHROPIC_API_KEY` est posé, la demande repart sur Haiku (trace « repli haiku » dans `npx wrangler tail`).
 - **Sinon, Claude Haiku 5.5 en direct** (secret `ANTHROPIC_API_KEY`), comme avant. Passer de l'un à l'autre ne demande qu'un redéploiement.
 
-Changer de modèle : modifier `OPENROUTER_MODEL` dans `wrangler.toml`, puis `npx wrangler deploy`. Choisir un modèle qui gère les sorties structurées sur OpenRouter (filtre *Structured outputs* de la liste des modèles).
+Changer de modèle : modifier `OPENROUTER_MODEL` dans `wrangler.toml`, puis `npx wrangler deploy`. Choisir un modèle qui gère l'appel d'outil (*tool_choice*) sur OpenRouter.
 
 ## Ce que le modèle a le droit de répondre
 

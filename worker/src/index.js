@@ -10,7 +10,8 @@
   1. Origine autorisée seulement (ALLOWED_ORIGINS), méthode et taille de requête bornées.
   2. Limitation de débit par adresse IP et globale (bindings Rate Limiting).
   3. Demande nettoyée et bornée à 300 caractères, encadrée et neutralisée dans le prompt.
-  4. Sortie imposée par un schéma JSON à valeurs fermées (structured outputs).
+  4. Sortie imposée par un schéma JSON à valeurs fermées (structured outputs, ou appel
+     d'outil forcé via OpenRouter).
   5. Sortie revalidée ici ; tout écart est rejeté. Le navigateur revalide encore.
   Les clés d'API ne quittent jamais le Worker (secrets OPENROUTER_API_KEY, ANTHROPIC_API_KEY).
 */
@@ -19,6 +20,7 @@ import { PAGES, cleanQuery, outputSchema, validate } from "./contract.js";
 import { systemPrompt, userMessage } from "./prompt.js";
 
 const MODEL = "claude-haiku-5-5";
+const TOOL = "reglages";
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const MAX_BODY = 2048;
 const MAX_TOKENS = 1024;
@@ -77,8 +79,10 @@ async function viaAnthropic(env, page, query, withPhrase, client) {
 }
 
 /*
-  OpenRouter, API compatible OpenAI. require_parameters écarte les hébergeurs qui ne
-  savent pas imposer le schéma JSON ; data_collection "deny" ceux qui gardent les demandes.
+  OpenRouter, API compatible OpenAI. La sortie passe par un appel d'outil forcé dont les
+  paramètres sont le schéma à valeurs fermées : c'est ce que déclarent la plupart des
+  hébergeurs, Jev compris (tool_choice), là où response_format json_schema est rare.
+  data_collection "deny" écarte les hébergeurs qui gardent les demandes.
 */
 async function viaOpenRouter(env, page, query, withPhrase, fetcher) {
   const res = await (fetcher || fetch)(OPENROUTER_URL, {
@@ -98,8 +102,12 @@ async function viaOpenRouter(env, page, query, withPhrase, fetcher) {
         { role: "system", content: systemPrompt(page, withPhrase) },
         { role: "user", content: userMessage(query) }
       ],
-      response_format: { type: "json_schema", json_schema: { name: "reglages", strict: true, schema: outputSchema(page, withPhrase) } },
-      provider: { require_parameters: true, data_collection: "deny" }
+      tools: [{
+        type: "function",
+        function: { name: TOOL, description: "Réglages de la page déduits de la demande.", strict: true, parameters: outputSchema(page, withPhrase) }
+      }],
+      tool_choice: { type: "function", function: { name: TOOL } },
+      provider: { data_collection: "deny" }
     }),
     signal: AbortSignal.timeout(15000)
   });
@@ -112,15 +120,26 @@ async function viaOpenRouter(env, page, query, withPhrase, fetcher) {
   const choice = data && data.choices && data.choices[0];
   if (!choice || !choice.message) return null;
   if (choice.message.refusal) return { pertinent: false };
-  if (choice.finish_reason !== "stop") return null;
-  return parseOut(page, choice.message.content, withPhrase);
+  if (choice.finish_reason !== "stop" && choice.finish_reason !== "tool_calls") return null;
+  const call = (choice.message.tool_calls || []).find((c) => c.function && c.function.name === TOOL);
+  return parseOut(page, call ? call.function.arguments : choice.message.content, withPhrase);
 }
 
-/* client : client Anthropic ou fonction fetch simulés, pour les tests */
-export async function interpret(env, page, query, client) {
+/*
+  Si OpenRouter échoue ou rend une sortie invalide, et que ANTHROPIC_API_KEY est posé,
+  la demande repart sur Haiku : la recherche ne tombe pas avec un hébergeur.
+  client : client Anthropic ou fonction fetch simulés, pour les tests ; anthropic : client
+  Anthropic simulé pour le repli.
+*/
+export async function interpret(env, page, query, client, anthropic) {
   const withPhrase = env.PHRASE_LIBRE === "on";
-  if (backend(env) === "openrouter") return viaOpenRouter(env, page, query, withPhrase, client);
-  return viaAnthropic(env, page, query, withPhrase, client);
+  if (backend(env) !== "openrouter") return viaAnthropic(env, page, query, withPhrase, client);
+  let out = null, failure = null;
+  try { out = await viaOpenRouter(env, page, query, withPhrase, client); } catch (e) { failure = e; }
+  if (out) return out;
+  if (!env.ANTHROPIC_API_KEY) { if (failure) throw failure; return null; }
+  console.log("repli haiku", failure ? failure.status : "sortie_invalide");
+  return viaAnthropic(env, page, query, withPhrase, anthropic);
 }
 
 export default {

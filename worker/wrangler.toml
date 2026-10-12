@@ -8,9 +8,9 @@ compatibility_flags = ["nodejs_compat"]
 ALLOWED_ORIGINS = "https://lebonmodel.numenys.fr"
 # Reformulation libre par Haiku : "off" tant que son cadrage n'est pas validé
 PHRASE_LIBRE = "off"
-# Modèle de la recherche via OpenRouter (identifiant OpenRouter, par exemple "google/gemini-...").
+# Modèle de la recherche via OpenRouter (identifiant OpenRouter ; ~ = alias vers la dernière version).
 # Vide, ou sans secret OPENROUTER_API_KEY : la recherche reste sur Claude Haiku 5.5 en direct.
-OPENROUTER_MODEL = ""
+OPENROUTER_MODEL = "~typesafe/jev-latest"
 
 # 8 demandes par minute et par adresse IP
 [[ratelimits]]

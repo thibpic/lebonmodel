@@ -139,6 +139,8 @@ function fakeFetch(body, status) {
 }
 const ENV_OR = { ...ENV, OPENROUTER_API_KEY: "or-test", OPENROUTER_MODEL: "fournisseur/modele" };
 const orReply = (content, finish, refusal) => ({ choices: [{ finish_reason: finish || "stop", message: { role: "assistant", content, refusal: refusal || null } }] });
+const orTool = (args, finish) => ({ choices: [{ finish_reason: finish || "tool_calls", message: { role: "assistant", content: null, tool_calls: [{ id: "c1", type: "function", function: { name: "reglages", arguments: args } }] } }] });
+const ENV_OR_SEUL = { ...ENV_OR, ANTHROPIC_API_KEY: "" };
 
 test("OpenRouter n'est utilisé que si le modèle et la clé sont posés", () => {
   assert.equal(backend(ENV), "anthropic");
@@ -154,19 +156,33 @@ test("interpret via OpenRouter envoie le modèle configuré avec un schéma stri
   assert.equal(url, "https://openrouter.ai/api/v1/chat/completions");
   assert.equal(init.headers.authorization, "Bearer or-test");
   assert.equal(body.model, "fournisseur/modele");
-  assert.equal(body.response_format.type, "json_schema");
-  assert.equal(body.response_format.json_schema.strict, true);
-  assert.deepEqual(body.response_format.json_schema.schema, outputSchema("modele", false));
-  assert.equal(body.provider.require_parameters, true);
+  assert.equal(body.tools[0].function.name, "reglages");
+  assert.equal(body.tools[0].function.strict, true);
+  assert.deepEqual(body.tools[0].function.parameters, outputSchema("modele", false));
+  assert.deepEqual(body.tool_choice, { type: "function", function: { name: "reglages" } });
+  assert.equal(body.provider.data_collection, "deny");
   assert.equal(body.messages[0].role, "system");
   assert.equal(body.messages.at(-1).content, userMessage("relire un contrat"));
 });
 
+test("interpret via OpenRouter lit l'appel d'outil forcé", async () => {
+  assert.deepEqual(await interpret(ENV_OR, "modele", "relire un contrat", fakeFetch(orTool(JSON.stringify(okModele)))), okModele);
+  assert.deepEqual(await interpret(ENV_OR, "modele", "x x", fakeFetch(orTool(JSON.stringify(okModele), "stop"))), okModele);
+  assert.equal(await interpret(ENV_OR_SEUL, "modele", "x x", fakeFetch(orTool('{"pertinent":true}'))), null);
+});
+
+test("OpenRouter en échec ou invalide repart sur Haiku si sa clé est posée", async () => {
+  const haiku = fakeClient(JSON.stringify(okModele));
+  assert.deepEqual(await interpret(ENV_OR, "modele", "x x", fakeFetch({ error: { message: "x" } }, 404), haiku), okModele);
+  assert.deepEqual(await interpret(ENV_OR, "modele", "x x", fakeFetch(orTool("pas du json")), haiku), okModele);
+  assert.deepEqual(await interpret(ENV_OR, "modele", "x x", fakeFetch(orReply(null, "stop", "non")), haiku), { pertinent: false });
+});
+
 test("interpret via OpenRouter rejette une sortie invalide, tronquée, refusée ou en erreur", async () => {
-  assert.equal(await interpret(ENV_OR, "modele", "x x", fakeFetch(orReply('{"pertinent":true}'))), null);
-  assert.equal(await interpret(ENV_OR, "modele", "x x", fakeFetch(orReply("pas du json"))), null);
-  assert.equal(await interpret(ENV_OR, "modele", "x x", fakeFetch(orReply(JSON.stringify(okModele), "length"))), null);
-  assert.deepEqual(await interpret(ENV_OR, "modele", "x x", fakeFetch(orReply(null, "stop", "non"))), { pertinent: false });
-  assert.equal(await interpret(ENV_OR, "modele", "x x", fakeFetch({ choices: [] })), null);
+  assert.equal(await interpret(ENV_OR_SEUL, "modele", "x x", fakeFetch(orReply('{"pertinent":true}'))), null);
+  assert.equal(await interpret(ENV_OR_SEUL, "modele", "x x", fakeFetch(orReply("pas du json"))), null);
+  assert.equal(await interpret(ENV_OR_SEUL, "modele", "x x", fakeFetch(orReply(JSON.stringify(okModele), "length"))), null);
+  assert.deepEqual(await interpret(ENV_OR_SEUL, "modele", "x x", fakeFetch(orReply(null, "stop", "non"))), { pertinent: false });
+  assert.equal(await interpret(ENV_OR_SEUL, "modele", "x x", fakeFetch({ choices: [] })), null);
   await assert.rejects(interpret(ENV_OR, "modele", "x x", fakeFetch({ error: { message: "x" } }, 401)));
 });
