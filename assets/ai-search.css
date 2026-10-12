@@ -24,7 +24,6 @@
 .ai-answer.ok { background: var(--gold-soft); color: var(--text); }
 .ai-answer.wait { color: var(--text-3); }
 .ai-label { font-weight: 600; color: var(--gold-ink); }
-.ai-link { display: inline-block; margin-top: 8px; font-weight: 600; color: var(--gold-ink); }
 @media (max-width: 560px) {
   .ai-field input { height: 56px; font-size: 1rem; padding: 0 104px 0 48px; }
   .ai-icon { left: 18px; }

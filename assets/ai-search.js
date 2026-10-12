@@ -43,14 +43,17 @@
       p.appendChild(document.createTextNode(l.text));
       answer.appendChild(p);
     });
-    if (kind === "ok" && page.resultAnchor) {
-      var a = document.createElement("a");
-      a.href = page.resultAnchor;
-      a.className = "ai-link";
-      a.textContent = "Voir le résultat";
-      answer.appendChild(a);
-    }
     answer.hidden = false;
+  }
+
+  /* Après une réponse comprise, on descend directement sur le résultat chargé */
+  function goToResult() {
+    var el = page.resultAnchor && document.querySelector(page.resultAnchor);
+    if (!el) return;
+    input.blur();
+    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var top = el.getBoundingClientRect().top + window.pageYOffset - 70;
+    window.scrollTo({ top: top, behavior: reduce ? "auto" : "smooth" });
   }
 
   function done() { busy = false; button.disabled = false; form.removeAttribute("aria-busy"); }
@@ -87,6 +90,7 @@
         lines.unshift({ label: "Reformulé par l'IA : ", text: it.reformulation.slice(0, 220) });
       }
       show(lines, "ok");
+      goToResult();
     }).catch(function (err) {
       show([{ text: err && err.msg ? err.msg : MSG.panne }], "info");
     }).then(function () { clearTimeout(timer); done(); });
