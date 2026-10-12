@@ -1,0 +1,338 @@
+{
+  "modele": {
+    "taches": [
+      {
+        "id": "reformuler",
+        "famille": "Écrire",
+        "label": "Corriger ou reformuler un mail",
+        "hint": "Ton, orthographe, clarté"
+      },
+      {
+        "id": "rediger",
+        "famille": "Écrire",
+        "label": "Rédiger un post, un article, une lettre",
+        "hint": "Un texte soigné à partir de vos idées"
+      },
+      {
+        "id": "traduire",
+        "famille": "Écrire",
+        "label": "Traduire un document",
+        "hint": "Une dizaine de pages, avec le bon registre"
+      },
+      {
+        "id": "synthese",
+        "famille": "Écrire",
+        "label": "Écrire une note de synthèse",
+        "hint": "À partir de plusieurs documents"
+      },
+      {
+        "id": "pdf",
+        "famille": "Lire un document",
+        "label": "Interroger un long PDF",
+        "hint": "Un rapport ou une étude d'une centaine de pages"
+      },
+      {
+        "id": "resumer",
+        "famille": "Lire un document",
+        "label": "Résumer un très long document",
+        "hint": "Environ 300 pages"
+      },
+      {
+        "id": "croiser",
+        "famille": "Lire un document",
+        "label": "Croiser plusieurs documents",
+        "hint": "Retrouver et recouper une information"
+      },
+      {
+        "id": "contrat",
+        "famille": "Lire un document",
+        "label": "Relire un contrat",
+        "hint": "Repérer les clauses à risque"
+      },
+      {
+        "id": "tableur",
+        "famille": "Analyser, décider",
+        "label": "Analyser un tableau de chiffres",
+        "hint": "Un export Excel, des ventes, un budget"
+      },
+      {
+        "id": "finance",
+        "famille": "Analyser, décider",
+        "label": "Lire un bilan, bâtir un prévisionnel",
+        "hint": "Comptes, budget, trésorerie"
+      },
+      {
+        "id": "strategie",
+        "famille": "Analyser, décider",
+        "label": "Préparer une décision stratégique",
+        "hint": "Peser des options, recommander"
+      },
+      {
+        "id": "livrable",
+        "famille": "Analyser, décider",
+        "label": "Produire un livrable complet",
+        "hint": "Présentation, rapport ou tableau finalisé"
+      },
+      {
+        "id": "projet",
+        "famille": "Analyser, décider",
+        "label": "Mener un dossier de fond",
+        "hint": "Des dizaines de documents, plusieurs semaines"
+      },
+      {
+        "id": "question",
+        "famille": "Chercher, raisonner",
+        "label": "Obtenir une réponse fiable",
+        "hint": "Une question de culture ou de métier"
+      },
+      {
+        "id": "expert",
+        "famille": "Chercher, raisonner",
+        "label": "Répondre à une question d'expert",
+        "hint": "Niveau doctorat, tous domaines"
+      },
+      {
+        "id": "recherche",
+        "famille": "Chercher, raisonner",
+        "label": "Faire une recherche approfondie",
+        "hint": "Veille ou état de l'art sourcé"
+      },
+      {
+        "id": "maths",
+        "famille": "Chercher, raisonner",
+        "label": "Résoudre un problème scientifique",
+        "hint": "Maths, physique, modélisation"
+      },
+      {
+        "id": "automatiser",
+        "famille": "Automatiser",
+        "label": "Automatiser une tâche entre vos outils",
+        "hint": "Mails, tableur, CRM, support"
+      },
+      {
+        "id": "extraire",
+        "famille": "Automatiser",
+        "label": "Extraire des données en série",
+        "hint": "Factures, CV, bons de commande"
+      },
+      {
+        "id": "support",
+        "famille": "Automatiser",
+        "label": "Répondre aux clients automatiquement",
+        "hint": "Un assistant sur votre site"
+      },
+      {
+        "id": "formule",
+        "famille": "Coder",
+        "label": "Écrire une formule Excel ou SQL",
+        "hint": "Une recherche, un calcul, une requête"
+      },
+      {
+        "id": "script",
+        "famille": "Coder",
+        "label": "Écrire un script",
+        "hint": "Python, macro, petit outil"
+      },
+      {
+        "id": "vibecoder",
+        "famille": "Coder",
+        "label": "Créer une application en vibecoding",
+        "hint": "Une fonctionnalité complète par un agent"
+      },
+      {
+        "id": "reprendre",
+        "famille": "Coder",
+        "label": "Reprendre un gros projet de code",
+        "hint": "Déboguer, refactorer, migrer"
+      }
+    ],
+    "chatgpt": [
+      {
+        "id": "free",
+        "label": "ChatGPT Gratuit"
+      },
+      {
+        "id": "go",
+        "label": "ChatGPT Go"
+      },
+      {
+        "id": "plus",
+        "label": "ChatGPT Plus"
+      },
+      {
+        "id": "pro",
+        "label": "ChatGPT Pro"
+      },
+      {
+        "id": "business",
+        "label": "ChatGPT Business"
+      }
+    ],
+    "claude": [
+      {
+        "id": "free",
+        "label": "Claude Gratuit"
+      },
+      {
+        "id": "pro",
+        "label": "Claude Pro"
+      },
+      {
+        "id": "max",
+        "label": "Claude Max 5x"
+      },
+      {
+        "id": "team",
+        "label": "Claude Team"
+      }
+    ]
+  },
+  "budget": {
+    "usages": [
+      {
+        "id": "question",
+        "label": "Poser des questions du quotidien",
+        "hint": "Une explication, un conseil, une idée",
+        "unite": "questions",
+        "volume": 60,
+        "apiOnly": false
+      },
+      {
+        "id": "reformuler",
+        "label": "Reformuler un mail ou un texte",
+        "hint": "Ton, orthographe, concision",
+        "unite": "textes",
+        "volume": 40,
+        "apiOnly": false
+      },
+      {
+        "id": "traduire",
+        "label": "Traduire un document",
+        "hint": "Quelques pages, avec le bon registre",
+        "unite": "documents",
+        "volume": 8,
+        "apiOnly": false
+      },
+      {
+        "id": "resumer",
+        "label": "Résumer un long document",
+        "hint": "Rapport, PDF ou compte rendu de 30 pages",
+        "unite": "documents",
+        "volume": 20,
+        "apiOnly": false
+      },
+      {
+        "id": "rediger",
+        "label": "Rédiger une note ou un article",
+        "hint": "Proposition, post, note de synthèse",
+        "unite": "rédactions",
+        "volume": 12,
+        "apiOnly": false
+      },
+      {
+        "id": "excel",
+        "label": "Analyser un tableau ou des chiffres",
+        "hint": "Fichier Excel, export comptable, budget",
+        "unite": "analyses",
+        "volume": 15,
+        "apiOnly": false
+      },
+      {
+        "id": "brief",
+        "label": "Préparer une décision",
+        "hint": "Croiser des documents, peser des options",
+        "unite": "dossiers",
+        "volume": 8,
+        "apiOnly": false
+      },
+      {
+        "id": "juridique",
+        "label": "Question juridique, fiscale ou RH",
+        "hint": "Un premier avis avant de voir un expert",
+        "unite": "questions",
+        "volume": 6,
+        "apiOnly": false
+      },
+      {
+        "id": "recherche",
+        "label": "Mener une recherche web approfondie",
+        "hint": "Veille, benchmark, état de l'art sourcé",
+        "unite": "recherches",
+        "volume": 10,
+        "apiOnly": false
+      },
+      {
+        "id": "agent",
+        "label": "Confier une longue tâche à un agent",
+        "hint": "Plusieurs heures de travail en autonomie",
+        "unite": "tâches",
+        "volume": 8,
+        "apiOnly": false
+      },
+      {
+        "id": "extraction",
+        "label": "Extraire des données de documents",
+        "hint": "Factures, CV, contrats, en série",
+        "unite": "documents",
+        "volume": 2000,
+        "apiOnly": true
+      },
+      {
+        "id": "support",
+        "label": "Répondre aux clients automatiquement",
+        "hint": "Un assistant sur votre site ou votre messagerie",
+        "unite": "conversations",
+        "volume": 3000,
+        "apiOnly": true
+      },
+      {
+        "id": "classer",
+        "label": "Trier des milliers d'éléments",
+        "hint": "Tickets, avis, mails, classés en masse",
+        "unite": "éléments",
+        "volume": 20000,
+        "apiOnly": true
+      },
+      {
+        "id": "script",
+        "label": "Écrire un script ou une formule",
+        "hint": "Macro Excel, requête SQL, petit script Python",
+        "unite": "scripts",
+        "volume": 20,
+        "apiOnly": false
+      },
+      {
+        "id": "vibecoding",
+        "label": "Vibecoder une application",
+        "hint": "Une session d'environ une heure avec un agent de code",
+        "unite": "sessions",
+        "volume": 20,
+        "apiOnly": false
+      },
+      {
+        "id": "refactor",
+        "label": "Reprendre une grosse base de code",
+        "hint": "Déboguer, refactorer, migrer un projet existant",
+        "unite": "sessions",
+        "volume": 8,
+        "apiOnly": false
+      },
+      {
+        "id": "revue",
+        "label": "Relire le code à chaque modification",
+        "hint": "Revue automatique des pull requests",
+        "unite": "revues",
+        "volume": 120,
+        "apiOnly": false
+      },
+      {
+        "id": "maths",
+        "label": "Résoudre un problème scientifique difficile",
+        "hint": "Maths, physique, modélisation",
+        "unite": "problèmes",
+        "volume": 10,
+        "apiOnly": false
+      }
+    ]
+  }
+}

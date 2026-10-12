@@ -26,6 +26,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Raleway:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="budget.css">
+<link rel="stylesheet" href="../assets/ai-search.css">
 <script>
   (function () {
     try {
@@ -72,6 +73,17 @@
     <h1 id="titre">Combien va vous coûter l'IA&#8239;?</h1>
     <p class="lede">Indiquez votre usage et votre volume. On estime ce que coûterait chaque modèle d'OpenAI et d'Anthropic chaque mois, et quel abonnement suffit. Pour choisir un modèle tâche par tâche, voyez <a href="../">la page principale</a>.</p>
     <p class="stamp">Prix et scores vérifiés le <span id="updated">10 octobre 2026</span></p>
+
+    <form class="ai-search" id="ai-search" role="search" autocomplete="off" hidden>
+      <label class="sr-only" for="ai-q">Décrivez votre besoin</label>
+      <div class="ai-field">
+        <svg class="ai-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l1.9 5.6 5.6 1.9-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.9L12 2.5zM18.5 15l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9.9-2.6z"/></svg>
+        <input id="ai-q" name="q" type="search" maxlength="300" enterkeyhint="search" placeholder="Ex. : répondre à 3 000 clients par mois via l'API">
+        <button type="submit">Chercher</button>
+      </div>
+      <p class="ai-note">Votre demande est interprétée par Claude Haiku 5.5 (Anthropic), qui ne fait que régler le comparateur. N'y mettez pas de données personnelles.</p>
+      <div class="ai-answer" id="ai-answer" aria-live="polite" hidden></div>
+    </form>
   </section>
 
   <section class="tool wrap" id="outil" aria-label="Comparateur">
@@ -213,5 +225,7 @@
 <!--PAGE-END-->
 <script src="budget-data.js"></script>
 <script src="budget-app.js"></script>
+<script src="../assets/ai-config.js"></script>
+<script src="../assets/ai-search.js"></script>
 </body>
 </html>

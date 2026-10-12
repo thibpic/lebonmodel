@@ -1,0 +1,34 @@
+/* lebonmodel, barre de recherche par Claude Haiku (pages principale et budget) */
+.ai-search { margin-top: clamp(24px, 3.5vw, 38px); max-width: 760px; }
+.ai-search[hidden] { display: none; }
+.ai-field { position: relative; display: flex; align-items: center; }
+.ai-icon { position: absolute; left: 22px; top: 50%; width: 22px; height: 22px; margin-top: -11px; fill: var(--gold); pointer-events: none; }
+.ai-field input {
+  flex: 1; min-width: 0; height: 62px; border: 0; border-radius: 999px; padding: 0 128px 0 56px;
+  background: var(--surface); color: var(--text); font: inherit; font-size: 1.05rem; box-shadow: var(--shadow);
+  -webkit-appearance: none; appearance: none; transition: box-shadow .2s;
+}
+.ai-field input::placeholder { color: var(--text-3); }
+.ai-field input:focus { outline: none; box-shadow: 0 0 0 2px var(--gold), var(--shadow); }
+.ai-field input::-webkit-search-cancel-button { -webkit-appearance: none; }
+.ai-field button {
+  position: absolute; right: 8px; top: 8px; bottom: 8px; padding: 0 22px; border: 0; border-radius: 999px;
+  background: var(--gold); color: #14161a; font: inherit; font-weight: 700; font-size: 0.95rem; cursor: pointer;
+}
+.ai-field button:hover { background: var(--gold-ink); }
+.ai-field button:disabled { opacity: .55; cursor: progress; }
+.ai-field button:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+.ai-note { margin: 10px 0 0 24px; font-size: 0.8rem; color: var(--text-3); }
+.ai-answer { margin-top: 16px; padding: 16px 20px; border-radius: 18px; background: var(--gold-faint); color: var(--text-2); font-size: 0.98rem; line-height: 1.6; }
+.ai-answer p { margin: 0; }
+.ai-answer p + p { margin-top: 8px; }
+.ai-answer.ok { background: var(--gold-soft); color: var(--text); }
+.ai-answer.wait { color: var(--text-3); }
+.ai-label { font-weight: 600; color: var(--gold-ink); }
+.ai-link { display: inline-block; margin-top: 8px; font-weight: 600; color: var(--gold-ink); }
+@media (max-width: 560px) {
+  .ai-field input { height: 56px; font-size: 1rem; padding: 0 104px 0 48px; }
+  .ai-icon { left: 18px; }
+  .ai-field button { padding: 0 16px; }
+  .ai-note { margin-left: 16px; }
+}

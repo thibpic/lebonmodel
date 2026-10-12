@@ -817,6 +817,51 @@
     });
   }
 
+  /* ---------- Recherche par Claude Haiku ----------
+     Applique une intention renvoyée par le proxy (assets/ai-search.js).
+     Chaque valeur est revalidée contre les données de la page ; la phrase
+     de réponse est composée ici, à partir des seuls libellés du site. */
+  var EXIG_IA = { premier_jet: -1, fiable: 0, sans_faute: 1 };
+  var EXIG_TXT = { "-1": "un premier jet suffit", "1": "sans faute" };
+  function planOk(p, id) { return id === "none" || (planIdx[p][id] && !planIdx[p][id].hidden); }
+  window.LBM_PAGE = {
+    id: "modele",
+    resultAnchor: "#resultat",
+    apply: function (it) {
+      if (!it || !taskById[it.tache]) return null;
+      state.task = it.tache;
+      state.cat = taskById[it.tache].cat;
+      if (planOk("openai", it.chatgpt)) state.oa = it.chatgpt;
+      if (planOk("anthropic", it.claude)) state.an = it.claude;
+      if (EXIG_IA.hasOwnProperty(it.exigence)) state.exig = EXIG_IA[it.exigence];
+      if (it.conversation_uniquement === "oui") state.chatOnly = true;
+      if (it.conversation_uniquement === "non") state.chatOnly = false;
+      state.open = {};
+      state.hl = null;
+      renderCats();
+      renderTasks();
+      renderSelects();
+      update();
+
+      var R = compute(), t = R.t, bits = [];
+      ["openai", "anthropic"].forEach(function (p) {
+        var sel = selection(p);
+        if (sel !== "all" && sel !== "none") bits.push(planIdx[p][sel].name);
+      });
+      var head = "Tâche retenue : " + t.label.charAt(0).toLowerCase() + t.label.slice(1);
+      if (bits.length) head += ", avec " + bits.join(" et ");
+      if (EXIG_TXT[String(state.exig)]) head += ", " + EXIG_TXT[String(state.exig)];
+      head += ". Il faut au moins le niveau " + LEVELS[R.need - 1] + ".";
+      var picks = [];
+      ["openai", "anthropic"].forEach(function (p) {
+        var pk = R.picks[p];
+        if (pk) picks.push(pk.r.m.name + " (" + settingText(pk.r) + ") chez " + PROV[p]);
+      });
+      var tail = picks.length ? " Le plus adapté : " + picks.join(", et ") + "." : " Aucun modèle de vos abonnements ne convient : voyez le classement ci-dessous.";
+      return { phrase: fr(head + tail) };
+    }
+  };
+
   /* ---------- Démarrage ---------- */
   readURL();
   renderCats();

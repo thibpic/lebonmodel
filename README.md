@@ -11,6 +11,10 @@ Site : <https://lebonmodel.numenys.fr>
 - `index.html` : choisir un modèle selon la tâche.
 - `budget/` : estimer un budget mensuel selon son usage et son volume.
 
+## Recherche par Claude Haiku
+
+Sur les deux pages, une barre de recherche laisse décrire son besoin en une phrase (« relire un contrat de 40 pages avec ChatGPT Plus »). Claude Haiku 5.5 la traduit en réglages du site (tâche ou usage, abonnements, exigence, volume), choisis dans des listes fermées, et le site compose sa réponse à partir de son propre calcul. L'appel passe par un petit proxy (`worker/`) qui garde la clé d'API, limite le débit et revalide chaque réponse : voir [worker/README.md](worker/README.md). La barre reste masquée tant que l'adresse du proxy n'est pas renseignée dans `assets/ai-config.js`.
+
 ## Données
 
 | Fichier | Contenu |
@@ -19,6 +23,7 @@ Site : <https://lebonmodel.numenys.fr>
 | `assets/tasks.js` | Les 24 tâches, les évaluations qui les mesurent, l'échelle de métiers, le niveau requis |
 | `assets/plans.js` | Les abonnements : réglages accessibles, taille de document acceptée, volumes publiés, prix |
 | `budget/budget-data.js` | Données de la page budget |
+| `assets/ai-config.js` | Adresse du proxy de recherche (vide : barre masquée) |
 
 `assets/models.js` est généré à partir des données publiques d'Artificial Analysis. Les autres fichiers se modifient à la main ; le site se recalcule sans étape de build.
 

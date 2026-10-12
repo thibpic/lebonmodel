@@ -785,6 +785,49 @@
     });
   }
 
+  /* ---------- Recherche par Claude Haiku ----------
+     Applique une intention renvoyée par le proxy (../assets/ai-search.js).
+     Chaque valeur est revalidée contre les données de la page ; la phrase
+     de réponse est composée ici, à partir des seuls libellés du site. */
+  var EXIG_IA = { premier_jet: -1, fiable: 0, sans_faute: 1 };
+  window.LBM_PAGE = {
+    id: "budget",
+    resultAnchor: "#results",
+    apply: function (it) {
+      if (!it || !usageById[it.usage]) return null;
+      var u = usageById[it.usage];
+      state.usage = u.id;
+      var v = it.rythme;
+      state.volume = (typeof v === "number" && v === Math.floor(v) && v >= 1) ? Math.min(v, 100000) : u.volume;
+      if (EXIG_IA.hasOwnProperty(it.exigence)) state.exig = EXIG_IA[it.exigence];
+      if (it.acces === "app" || it.acces === "api") state.access = it.acces;
+      if (profileById[state.profile].usages.indexOf(u.id) === -1) state.expanded = true;
+      state.open = {};
+      $("#exig-" + (state.exig === -1 ? "low" : state.exig === 1 ? "high" : "mid")).checked = true;
+      renderUsages();
+      renderVolume(true);
+      update();
+
+      var r = compute(), access = effectiveAccess(u), parts = [];
+      var head = "Usage retenu : " + u.label.charAt(0).toLowerCase() + u.label.slice(1) + ", " +
+        nf0.format(state.volume) + " " + singular(u.unit, state.volume) + " par mois, " +
+        (access === "api" ? "par l'API" : "avec un abonnement") + ".";
+      ["openai", "anthropic"].forEach(function (p) {
+        if (access === "app") {
+          var res = recommendPlan(p, u, r.req);
+          if (res) parts.push(res.plan.name + (res.plan.usd === 0 ? " (gratuit)" : " (" + planPriceText(p, res.plan) + " par mois)"));
+        } else {
+          var c = r.picks[p];
+          if (c) parts.push(c.m.name + " chez " + provName(p) + ", environ " + money(c.month) + " par mois");
+        }
+      });
+      var tail = !parts.length ? " Aucune offre n'atteint ce niveau : voyez le classement ci-dessous."
+        : access === "app" ? " Abonnement suffisant : " + parts.join(" ou ") + "."
+        : " Le plus économique au bon niveau : " + parts.join(", ou ") + ".";
+      return { phrase: (head + tail).replace(/ ([:;!?])/g, NB + "$1") };
+    }
+  };
+
   /* ---------- Démarrage ---------- */
   readURL();
   renderProfiles();

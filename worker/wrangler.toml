@@ -1,0 +1,24 @@
+name = "lebonmodel-recherche"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+# Origines autorisées, séparées par des virgules
+ALLOWED_ORIGINS = "https://lebonmodel.numenys.fr"
+# Reformulation libre par Haiku : "off" tant que son cadrage n'est pas validé
+PHRASE_LIBRE = "off"
+
+# 8 demandes par minute et par adresse IP
+[[ratelimits]]
+name = "RL_IP"
+namespace_id = "1001"
+simple = { limit = 8, period = 60 }
+
+# 120 demandes par minute pour tout le site
+[[ratelimits]]
+name = "RL_GLOBAL"
+namespace_id = "1002"
+simple = { limit = 120, period = 60 }
+
+# Secret à définir une fois : npx wrangler secret put ANTHROPIC_API_KEY
