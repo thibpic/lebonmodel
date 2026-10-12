@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>lebonmodel | Le bon modèle d'IA pour chaque tâche</title>
-<meta name="description" content="Choisissez ce que vous voulez faire : lebonmodel compare les modèles d'OpenAI et d'Anthropic sur cette tâche précise, selon l'abonnement que vous avez. Un outil Numenys.">
+<meta name="description" content="Choisissez ce que vous voulez faire : lebonmodel compare les modèles d'OpenAI, Anthropic, Google, Mistral, xAI, DeepSeek, Meta et Alibaba sur cette tâche précise, selon l'abonnement que vous avez. Un outil Numenys.">
 <meta name="author" content="Numenys, Thibaut Picard Destelan">
 <link rel="canonical" href="https://lebonmodel.numenys.fr/">
 <meta property="og:type" content="website">
@@ -12,13 +12,13 @@
 <meta property="og:locale" content="fr_FR">
 <meta property="og:url" content="https://lebonmodel.numenys.fr/">
 <meta property="og:title" content="lebonmodel : le bon modèle d'IA pour chaque tâche">
-<meta property="og:description" content="Choisissez une tâche, comparez les modèles d'OpenAI et d'Anthropic sur cette tâche, filtrez selon votre abonnement.">
+<meta property="og:description" content="Choisissez une tâche, comparez les modèles des grands éditeurs d'IA sur cette tâche, filtrez selon votre abonnement.">
 <meta property="og:image" content="https://lebonmodel.numenys.fr/og-lebonmodel.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="lebonmodel : le bon modèle d'IA pour chaque tâche">
-<meta name="twitter:description" content="Comparez les modèles d'OpenAI et d'Anthropic sur la tâche que vous voulez faire.">
+<meta name="twitter:description" content="Comparez les modèles des grands éditeurs d'IA sur la tâche que vous voulez faire.">
 <meta name="twitter:image" content="https://lebonmodel.numenys.fr/og-lebonmodel.png">
 <meta name="theme-color" content="#14161a">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -27,6 +27,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Raleway:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="assets/style.css">
 <link rel="stylesheet" href="assets/ai-search.css">
+<link rel="stylesheet" href="assets/providers.css">
 <script>
   (function () {
     try {
@@ -71,7 +72,7 @@
 <main>
   <section class="hero wrap" aria-labelledby="titre">
     <h1 id="titre">Le bon modèle d'IA pour chaque tâche.</h1>
-    <p class="lede">Choisissez ce que vous voulez faire. lebonmodel compare les modèles d'OpenAI et d'Anthropic sur cette tâche précise, avec l'abonnement que vous avez déjà.</p>
+    <p class="lede">Choisissez ce que vous voulez faire. lebonmodel compare les modèles des grands éditeurs d'IA sur cette tâche précise, avec l'abonnement que vous avez déjà.</p>
 
     <form class="ai-search" id="ai-search" role="search" autocomplete="off" hidden>
       <label class="sr-only" for="ai-q">Décrivez votre besoin</label>
@@ -97,14 +98,12 @@
           <p class="need" id="need-line">&nbsp;</p>
         </div>
         <form class="settings" id="settings" autocomplete="off">
-          <div class="setting">
-            <label for="sel-openai"><span class="mark openai" aria-hidden="true"></span>Votre ChatGPT</label>
-            <span class="select"><select id="sel-openai"></select></span>
-          </div>
-          <div class="setting">
-            <label for="sel-anthropic"><span class="mark anthropic" aria-hidden="true"></span>Votre Claude</label>
-            <span class="select"><select id="sel-anthropic"></select></span>
-          </div>
+          <fieldset class="setting providers-set">
+            <legend>Éditeurs comparés</legend>
+            <div class="providers" id="providers" role="group" aria-describedby="providers-note"></div>
+            <p class="providers-note" id="providers-note"></p>
+          </fieldset>
+          <div class="subs" id="subs"></div>
           <div class="setting-switch">
             <label class="switch" for="chat-only">
               <input type="checkbox" id="chat-only">
@@ -133,6 +132,7 @@
         </div>
       </div>
       <div class="picks" id="picks" aria-live="polite"></div>
+      <div class="outside" id="outside" aria-live="polite" hidden></div>
 
       <figure class="map" id="map" aria-labelledby="map-title">
         <figcaption class="map-head">
@@ -140,18 +140,24 @@
           <p id="map-sub">100 = le meilleur modèle actuel sur cette tâche. Chaque point est un modèle, à son réglage le plus adapté.</p>
         </figcaption>
         <ul class="legend-row" aria-label="Légende">
-          <li><svg viewBox="0 0 14 14" aria-hidden="true"><circle class="mk-openai" cx="7" cy="7" r="5.5"/></svg>OpenAI</li>
-          <li><svg viewBox="0 0 14 14" aria-hidden="true"><rect class="mk-anthropic" x="1.5" y="1.5" width="11" height="11" rx="2.5"/></svg>Anthropic</li>
+          <li class="legend-providers"><ul id="legend-providers"></ul></li>
           <li><svg viewBox="0 0 14 14" aria-hidden="true"><path class="mk-threshold" d="M7 0v14"/></svg>Niveau requis</li>
           <li><svg viewBox="0 0 14 14" aria-hidden="true"><circle class="mk-dim" cx="7" cy="7" r="5.5"/></svg>Hors de vos abonnements</li>
         </ul>
         <div class="chart" id="chart"></div>
         <div class="map-foot">
+          <div class="map-switches">
           <label class="switch" for="show-all">
             <input type="checkbox" id="show-all">
             <span class="switch-track" aria-hidden="true"></span>
             Voir tous les niveaux d'effort
           </label>
+          <label class="switch" for="show-prev">
+            <input type="checkbox" id="show-prev">
+            <span class="switch-track" aria-hidden="true"></span>
+            Générations précédentes
+          </label>
+          </div>
           <p class="axis-note">Coût d'une tâche en API, échelle logarithmique</p>
         </div>
       </figure>
@@ -168,11 +174,12 @@
           </div>
         </div>
         <ol class="ranking-list" id="ranking"></ol>
+        <button type="button" class="rank-more" id="rank-more" aria-controls="ranking" hidden></button>
       </section>
 
       <section class="tiers" id="formules" aria-labelledby="tiers-title">
         <h3 id="tiers-title">Ce que chaque formule vous donne pour cette tâche</h3>
-        <p class="tiers-sub">À prix comparable, le meilleur niveau atteignable dans chaque offre, et ce que les éditeurs publient sur les volumes. Ni OpenAI ni Anthropic ne publient de quota en tokens.</p>
+        <p class="tiers-sub">À prix comparable, le meilleur niveau atteignable dans chaque offre, et ce que les éditeurs publient sur les volumes. Aucun éditeur ne publie de quota en tokens.</p>
         <div class="tier-table" id="tiers" role="table" aria-labelledby="tiers-title"></div>
       </section>
     </div>
@@ -196,15 +203,15 @@
         </div>
         <div>
           <h3>Les abonnements</h3>
-          <p>Pour chaque offre, nous ne retenons que les réglages réellement proposés dans ChatGPT, ChatGPT Work, Codex, l'appli Claude et Claude Code, ainsi que la taille des documents acceptée. Si vous n'avez que la conversation, comme dans beaucoup d'entreprises, cochez «&nbsp;Conversation uniquement&nbsp;». Les volumes viennent des pages d'aide des éditeurs, qui ne les publient jamais en tokens.</p>
+          <p>Pour chaque offre, nous ne retenons que les réglages réellement proposés dans les applis (ChatGPT, Claude, Gemini, Vibe, Grok, DeepSeek) et dans leurs agents (ChatGPT Work, Codex, Claude Code, Jules, Grok Build), ainsi que la taille des documents acceptée. Meta et Alibaba ne vendent pas d'abonnement en France&nbsp;: on les compare à l'API. Si vous n'avez que la conversation, comme dans beaucoup d'entreprises, cochez «&nbsp;Conversation uniquement&nbsp;». Les volumes viennent des pages d'aide des éditeurs, qui ne les publient jamais en tokens.</p>
         </div>
         <div>
           <h3>Les limites</h3>
-          <p>Aucune évaluation récente ne mesure la qualité en français. Le mode Pro de ChatGPT n'est pas évalué&nbsp;: nous le montrons comme GPT-6 Astra au maximum. Le mode Think des offres gratuites, qui repose sur GPT-5.6 Luna, est compté avec un effort moyen. Pour GPT-5.6 Sol en mode Instant et Claude Haiku 4.5 sans réflexion, quelques scores sont estimés à partir du même modèle. Pour Claude Haiku 5.5, sorti le 7 octobre, Artificial Analysis publie l'indice, le coût et la vitesse mais pas encore le détail par évaluation&nbsp;: ses notes par tâche sont estimées à partir de Claude Sonnet 5.5. Les modèles à accès restreint ou à héberger soi-même ne sont pas comparés.</p>
+          <p>Aucune évaluation récente ne mesure la qualité en français. Le mode Pro de ChatGPT n'est pas évalué&nbsp;: nous le montrons comme GPT-6 Astra au maximum. Le mode Think des offres gratuites, qui repose sur GPT-5.6 Luna, est compté avec un effort moyen. Pour GPT-5.6 Sol en mode Instant et Claude Haiku 4.5 sans réflexion, quelques scores sont estimés à partir du même modèle. Pour Claude Haiku 5.5, sorti le 7 octobre, Artificial Analysis publie l'indice, le coût et la vitesse mais pas encore le détail par évaluation&nbsp;: ses notes par tâche sont estimées à partir de Claude Sonnet 5.5. Pour Google, Mistral, xAI, DeepSeek, Meta et Alibaba, Artificial Analysis publie dix évaluations sur dix-sept&nbsp;: les autres (indices métiers, AA-Omniscience) sont estimées à partir du modèle mesuré d'indice le plus proche, et les coûts par évaluation au prorata du coût par tâche mesuré. Google, Mistral et xAI ne disent pas toujours quel modèle sert chaque offre&nbsp;: nous retenons le plus probable et le signalons. Les modèles à accès restreint ou à héberger soi-même ne sont pas comparés.</p>
         </div>
         <div>
           <h3>Mise à jour</h3>
-          <p>Données du <span id="updated">10 octobre 2026</span>. Les modèles changent vite&nbsp;: un essai sur vos propres documents reste le meilleur arbitre. Pour un budget mensuel selon votre volume, voyez la page <a href="budget/">Estimer un budget</a>.</p>
+          <p>Données du <span id="updated">12 octobre 2026</span>. Les modèles changent vite&nbsp;: un essai sur vos propres documents reste le meilleur arbitre. Pour un budget mensuel selon votre volume, voyez la page <a href="budget/">Estimer un budget</a>.</p>
         </div>
       </div>
       <div class="sources">
@@ -227,11 +234,12 @@
       <li><a href="https://www.linkedin.com/in/thibaut-picard-destelan">Thibaut Picard Destelan sur LinkedIn</a></li>
       <li><a href="https://github.com/thibpic/lebonmodel">Code et données sur GitHub</a></li>
     </ul>
-    <p class="fine">Outil indépendant, sans lien commercial avec OpenAI ni Anthropic. Les noms des modèles appartiennent à leurs éditeurs. Estimations indicatives.</p>
+    <p class="fine">Outil indépendant, sans lien commercial avec les éditeurs comparés. Les noms des modèles appartiennent à leurs éditeurs. Estimations indicatives.</p>
   </div>
 </footer>
 <noscript><p class="noscript">lebonmodel a besoin de JavaScript pour comparer les modèles.</p></noscript>
 <!--PAGE-END-->
+<script src="assets/providers.js"></script>
 <script src="assets/models.js"></script>
 <script src="assets/tasks.js"></script>
 <script src="assets/plans.js"></script>

@@ -1,5 +1,5 @@
 /*
-  Le contrat de sortie : ce que Claude Haiku a le droit de renvoyer, page par page.
+  Le contrat de sortie : ce que le modèle de recherche a le droit de renvoyer, page par page.
   Chaque champ est une énumération fermée tirée des données du site (catalog.json),
   sauf le rythme (un entier borné ici) et la reformulation libre, désactivée par défaut.
   Le même contrat sert deux fois : comme schéma JSON imposé à l'API (structured
@@ -22,16 +22,15 @@ function ids(list) { return list.map((x) => x.id); }
 /* Énumérations par page et par champ ; « inconnu » ou « aucune » quand la demande ne dit rien */
 export function enums(page) {
   if (page === "modele") {
-    return {
-      tache: ["aucune"].concat(ids(catalog.modele.taches)),
-      chatgpt: ["inconnu", "none"].concat(ids(catalog.modele.chatgpt)),
-      claude: ["inconnu", "none"].concat(ids(catalog.modele.claude)),
-      exigence: EXIGENCES,
-      conversation_uniquement: OUI_NON
-    };
+    const e = { tache: ["aucune"].concat(ids(catalog.modele.taches)), editeur: ["inconnu"].concat(ids(catalog.modele.editeurs)) };
+    for (const [key, a] of Object.entries(catalog.modele.abonnements)) e[key] = ["inconnu", "none"].concat(ids(a.offres));
+    e.exigence = EXIGENCES;
+    e.conversation_uniquement = OUI_NON;
+    return e;
   }
   return {
     usage: ["aucun"].concat(ids(catalog.budget.usages)),
+    editeur: ["inconnu"].concat(ids(catalog.budget.editeurs)),
     exigence: EXIGENCES,
     acces: ["inconnu", "app", "api"]
   };

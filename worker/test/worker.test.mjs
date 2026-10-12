@@ -22,8 +22,8 @@ function fakeClient(text, stop) {
   };
 }
 
-const okModele = { pertinent: true, tache: "contrat", chatgpt: "plus", claude: "inconnu", exigence: "sans_faute", conversation_uniquement: "inconnu" };
-const okBudget = { pertinent: true, usage: "support", rythme: 3000, exigence: "inconnu", acces: "api" };
+const okModele = { pertinent: true, tache: "contrat", editeur: "google", chatgpt: "plus", claude: "inconnu", gemini: "pro", vibe: "inconnu", grok: "inconnu", deepseek: "none", exigence: "sans_faute", conversation_uniquement: "inconnu" };
+const okBudget = { pertinent: true, usage: "support", editeur: "mistral", rythme: 3000, exigence: "inconnu", acces: "api" };
 
 test("catalog.json est à jour avec les données du site", () => {
   const onDisk = JSON.parse(readFileSync(new URL("../src/catalog.json", import.meta.url), "utf8"));
@@ -49,6 +49,8 @@ test("validate accepte une sortie conforme", () => {
 test("validate rejette toute valeur hors liste, clé en trop ou manquante", () => {
   assert.equal(validate("modele", { ...okModele, tache: "pirater" }, false), null);
   assert.equal(validate("modele", { ...okModele, chatgpt: "<script>" }, false), null);
+  assert.equal(validate("modele", { ...okModele, editeur: "inconnu-sa" }, false), null);
+  assert.equal(validate("modele", { ...okModele, grok: "free" }, false), null, "pas d'offre gratuite Grok au catalogue");
   assert.equal(validate("modele", { ...okModele, extra: "x" }, false), null);
   const { claude, ...missing } = okModele;
   assert.equal(validate("modele", missing, false), null);
@@ -81,7 +83,8 @@ test("la demande est bornée et neutralisée", () => {
 
 test("le prompt liste toutes les valeurs autorisées", () => {
   const p = systemPrompt("modele", false);
-  for (const id of ["contrat", "vibecoder", "plus", "max", "team"]) assert.ok(p.includes(`- ${id} :`), id);
+  for (const id of ["contrat", "vibecoder", "plus", "max", "team", "ultra", "supergrok", "google", "mistral"]) assert.ok(p.includes(`- ${id} :`), id);
+  for (const k of ["chatgpt", "claude", "gemini", "vibe", "grok", "deepseek"]) assert.ok(p.includes(`- ${k} : l'abonnement`), k);
   assert.ok(!p.includes("reformulation"));
   assert.ok(systemPrompt("budget", true).includes("reformulation"));
 });

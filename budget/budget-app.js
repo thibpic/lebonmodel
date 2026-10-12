@@ -3,7 +3,13 @@
   "use strict";
 
   var D = window.LBM_BUDGET;
-  if (!D) return;
+  if (!D || !window.LBM_PROVIDERS) return;
+
+  /* Éditeurs : même choix que sur la page principale (paramètre editeurs), 4 au plus côte à côte */
+  var MAX_SHOWN = 4, RANK_MAX = 10;
+  var PROVIDERS = window.LBM_PROVIDERS.filter(function (p) { return D.models.some(function (m) { return m.provider === p.id; }); });
+  var PROV = {}; PROVIDERS.forEach(function (p) { PROV[p.id] = p; });
+  var DEFAULT_SHOWN = PROVIDERS.filter(function (p) { return p.byDefault; }).map(function (p) { return p.id; }).slice(0, MAX_SHOWN);
 
   var FX = D.fx.usdToEur;
   var VAT = D.fx.vat;
@@ -42,8 +48,13 @@
     showAll: false,
     expanded: false,
     open: {},
-    hl: null
+    hl: null,
+    shown: DEFAULT_SHOWN.slice(),
+    rankAll: false
   };
+  function isShown(p) { return state.shown.indexOf(p) >= 0; }
+  function shownModels() { return D.models.filter(function (m) { return isShown(m.provider); }); }
+  function plansOf(p) { return D.plans[p] || []; }
 
   function readURL() {
     try {
@@ -58,6 +69,11 @@
       if (p.get("acces") === "api" || p.get("acces") === "app") state.access = p.get("acces");
       else state.access = profileById[state.profile].access;
       if (p.get("devise") === "USD") state.cur = "USD";
+      var ed = p.get("editeurs");
+      if (ed) {
+        var list = ed.split(",").filter(function (id, i, a) { return PROV[id] && a.indexOf(id) === i; }).slice(0, MAX_SHOWN);
+        if (list.length) state.shown = list;
+      }
     } catch (err) {
       state.usage = profileById[state.profile].start;
       state.volume = usageById[state.usage].volume;
@@ -74,6 +90,7 @@
       p.set("exigence", String(state.exig));
       p.set("acces", state.access);
       if (state.cur === "USD") p.set("devise", "USD");
+      if (state.shown.join(",") !== DEFAULT_SHOWN.join(",")) p.set("editeurs", state.shown.join(","));
       window.history.replaceState(null, "", window.location.pathname + "?" + p.toString() + window.location.hash);
     } catch (err) { /* aperçu sans URL modifiable */ }
   }
@@ -113,7 +130,7 @@
     if (lv.e === "reasoning") return "réflexion étendue";
     return "effort " + effortLabel(lv.e);
   }
-  function provName(p) { return D.providers[p].name; }
+  function provName(p) { return PROV[p] ? PROV[p].name : p; }
   function singular(unit, n) { return n < 2 ? unit.replace(/s$/, "") : unit; }
   function frDate(iso) {
     try { return new Date(iso + "T12:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }); }
@@ -144,7 +161,7 @@
     var req = required(u);
     var vol = state.volume;
     var configs = [];
-    D.models.forEach(function (m) {
+    shownModels().forEach(function (m) {
       m.levels.forEach(function (lv) {
         var t = costTask(m, lv, u);
         if (t == null) return;
@@ -152,7 +169,7 @@
       });
     });
     var perModel = [];
-    D.models.forEach(function (m) {
+    shownModels().forEach(function (m) {
       var own = configs.filter(function (c) { return c.m === m; });
       if (!own.length) return;
       var ok = own.filter(function (c) { return c.idx >= req.min; }).sort(function (a, b) { return a.month - b.month || b.idx - a.idx; });
@@ -173,10 +190,8 @@
       margin = configs.slice().sort(function (a, b) { return b.idx - a.idx; })[0] || null;
     }
     if (margin && margin.m === rec.m && margin.lv === rec.lv) margin = null;
-    var picks = {
-      openai: sufficient.filter(function (x) { return x.m.provider === "openai"; })[0] || null,
-      anthropic: sufficient.filter(function (x) { return x.m.provider === "anthropic"; })[0] || null
-    };
+    var picks = {};
+    state.shown.forEach(function (p) { picks[p] = sufficient.filter(function (x) { return x.m.provider === p; })[0] || null; });
     return { u: u, req: req, configs: configs, perModel: perModel, sufficient: sufficient, insufficient: insufficient, rec: rec, other: other, margin: margin, nextMin: nextMin, picks: picks };
   }
 
@@ -201,7 +216,7 @@
     if (u.app === "code") addSpec(plan.code, "code");
     else {
       addSpec(plan.chat, "chat");
-      if (provider === "openai") addSpec(plan.code, "work");
+      if (PROV[provider].places.work) addSpec(plan.code, "work");
     }
     return out;
   }
@@ -226,22 +241,24 @@
     return Object.assign({}, ok[0], { headroom: headroom });
   }
 
+  /* eur : prix TTC publié pour la France ; sinon dollars HT convertis avec la TVA */
+  function isFree(plan) { return !plan.usd && !plan.eur; }
   function planPriceEur(provider, plan) {
-    if (provider === "openai") return plan.eur;
+    if (plan.eur != null) return plan.eur;
     return plan.usd * FX * (1 + VAT);
   }
+  function nfp(v) { return v === Math.round(v) ? nf0.format(v) : nf2.format(v); }
 
   function planPriceText(provider, plan) {
-    if (plan.usd === 0) return "0" + sym();
-    if (state.cur === "USD") return nf0.format(plan.usd) + NB + "$";
-    var v = planPriceEur(provider, plan);
-    if (provider === "openai") return nf0.format(v) + NB + "€";
-    return "≈" + NB + nf0.format(Math.round(v)) + NB + "€";
+    if (isFree(plan)) return "0" + sym();
+    if (state.cur === "USD") return plan.usd != null ? nfp(plan.usd) + NB + "$" : "≈" + NB + nf0.format(Math.round(plan.eur / FX)) + NB + "$";
+    if (plan.eur != null) return nfp(plan.eur) + NB + "€";
+    return "≈" + NB + nf0.format(Math.round(planPriceEur(provider, plan))) + NB + "€";
   }
 
   function recommendPlan(provider, u, req) {
     var first = null, last = null;
-    var plans = D.plans[provider];
+    var plans = plansOf(provider);
     for (var i = 0; i < plans.length; i++) {
       var plan = plans[i];
       var b = bestInPlan(provider, plan, u, req);
@@ -256,27 +273,16 @@
     return null;
   }
 
+  /* Où faire l'usage, dans les mots de l'éditeur (places de LBM_PROVIDERS) */
+  function placeOf(p, where) { var pl = PROV[p].places; return pl[where] || pl.chat; }
   function whereText(c, u) {
+    var place = placeOf(c.m.provider, c.where);
     if (c.isDefault) {
-      if (c.m.provider === "openai") {
-        if (c.where === "chat") return "Dans ChatGPT, le mode " + c.label + " proposé par défaut suffit.";
-        return "Dans Codex, gardez le modèle par défaut, " + c.m.name + " " + effortPhrase(c.lv) + ".";
-      }
-      if (c.where === "chat") return "Dans l'appli Claude, gardez le réglage par défaut, " + c.m.short + " " + effortPhrase(c.lv) + ".";
-      return "Dans " + (u.id === "agent" ? "l'appli Claude ou Claude Code" : "Claude Code") + ", gardez le réglage par défaut, " + c.m.short + " " + effortPhrase(c.lv) + ".";
+      if (c.where === "chat" && c.label) return "Dans " + place + ", le mode " + c.label + " proposé par défaut suffit.";
+      return "Dans " + place + ", gardez le réglage par défaut, " + c.m.name + " " + effortPhrase(c.lv) + ".";
     }
-    if (c.m.provider === "openai") {
-      if (c.where === "chat") return "Dans ChatGPT, choisissez le mode " + c.label + ".";
-      var place = u.app === "code" ? (u.id === "agent" ? "Work ou Codex" : "Codex") : "Work";
-      return "Dans " + place + ", choisissez " + c.m.name + " " + effortPhrase(c.lv) + ".";
-    }
-    if (c.where === "chat") {
-      if (c.label && c.lv.e === "medium") return "Dans l'appli Claude, choisissez " + c.label + " (réglage par défaut).";
-      if (c.label) return "Dans l'appli Claude, choisissez " + c.label + ".";
-      return "Dans l'appli Claude, choisissez " + c.m.short + " " + effortPhrase(c.lv) + ".";
-    }
-    var p2 = u.id === "agent" ? "l'appli Claude ou Claude Code" : "Claude Code";
-    return "Dans " + p2 + ", choisissez " + c.m.short + " " + effortPhrase(c.lv) + ".";
+    if (c.where === "chat" && c.label) return "Dans " + place + ", choisissez le mode " + c.label + " (" + c.m.name + ").";
+    return "Dans " + place + ", choisissez " + c.m.name + " " + effortPhrase(c.lv) + ".";
   }
 
   /* ---------- Contrôles ---------- */
@@ -350,7 +356,7 @@
       appInput.disabled = false;
       $("#access-" + state.access).checked = true;
       note.textContent = state.access === "app"
-        ? "Offres ChatGPT et Claude, avec les réglages réellement disponibles dans chaque appli."
+        ? "Les offres des éditeurs comparés, avec les réglages réellement disponibles dans chaque appli."
         : "Vous payez chaque token lu et écrit. Prix hors TVA, convertis au taux de la BCE.";
     }
   }
@@ -473,7 +479,7 @@
     // Courbes d'effort
     var gc = C.g.curves; gc.textContent = "";
     if (state.showAll) {
-      D.models.forEach(function (m) {
+      shownModels().forEach(function (m) {
         var own = r.configs.filter(function (c) { return c.m === m; }).sort(function (a, b) { return a.idx - b.idx; });
         if (own.length < 2) return;
         var d = own.map(function (c, i) { return (i ? "L" : "M") + xs(c.idx).toFixed(1) + " " + ys(toCur(c.month)).toFixed(1); }).join(" ");
@@ -495,8 +501,7 @@
         g = svgEl("g", { "class": "pt", tabindex: "0", "data-model": id }, C.g.points);
         svgEl("circle", { "class": "hit", r: 15 }, g);
         svgEl("circle", { "class": "halo", r: 13 }, g);
-        if (p.m.provider === "openai") svgEl("circle", { "class": "shape", r: 6.5 }, g);
-        else svgEl("rect", { "class": "shape", x: -6, y: -6, width: 12, height: 12, rx: 3 }, g);
+        shapeEl(PROV[p.m.provider].shape, g);
         g.addEventListener("pointerenter", function () { showTip(id); });
         g.addEventListener("pointerleave", hideTip);
         g.addEventListener("focus", function () { showTip(id); });
@@ -505,7 +510,7 @@
         g.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); focusModel(id, true); } });
         C.pts[id] = g;
       }
-      var isRec = p === r.picks.openai || p === r.picks.anthropic;
+      var isRec = isPick(r, p);
       g.setAttribute("class", "pt " + p.m.provider + (p.ok ? "" : " insufficient") + (isRec ? " rec" : "") + (state.hl === id ? " hl" : ""));
       g.setAttribute("aria-label", p.m.name + ", " + effortShort(p.lv) + ", indice " + idxText(p.idx) + ", " + money(p.month) + " par mois" + (p.ok ? "" : ", en dessous de votre niveau"));
       if (fresh || resizeOnly) { g.style.transition = "none"; }
@@ -514,6 +519,14 @@
       g._p = p; g._x = x; g._y = y;
       obstacles.push({ x: x - 9, y: y - 9, w: 18, h: 18, id: id });
       items.push({ id: id, x: x, y: y, text: p.m.short, rec: isRec, ok: p.ok, pr: isRec ? 3 : (p.ok ? 2 : 1) });
+    });
+
+    // Points des éditeurs retirés
+    var seen = {};
+    r.perModel.forEach(function (p) { seen[p.m.id] = true; });
+    Object.keys(C.pts).forEach(function (id) {
+      C.pts[id].style.display = seen[id] ? "" : "none";
+      if (C.lbls[id]) C.lbls[id].style.display = seen[id] ? "" : "none";
     });
 
     // Étiquettes, placées sans chevauchement
@@ -557,6 +570,7 @@
       requestAnimationFrame(function () { t.style.transition = ""; });
     });
 
+    renderLegend();
     C.desc.textContent = "Recommandé : " + r.rec.m.name + ", " + effortShort(r.rec.lv) + ", indice " + idxText(r.rec.idx) + ", " + money(r.rec.month) + " par mois. Seuil requis : indice " + r.req.min + ".";
   }
 
@@ -566,7 +580,7 @@
     var g = C.pts[id];
     if (!g || !g._p) return;
     var p = g._p, r = C.last;
-    var verdict = (r && (p === r.picks.openai || p === r.picks.anthropic)) ? "Le plus adapté chez " + provName(p.m.provider) : (p.ok ? "Atteint votre niveau" : "En dessous de votre niveau");
+    var verdict = (r && isPick(r, p)) ? "Le plus adapté chez " + provName(p.m.provider) : (p.ok ? "Atteint votre niveau" : "En dessous de votre niveau");
     C.tip.innerHTML = "<strong>" + esc(p.m.name) + "</strong>" +
       '<span class="t-row"><span>Réglage</span><b>' + esc(effortShort(p.lv)) + "</b></span>" +
       '<span class="t-row"><span>Indice</span><b class="num">' + idxText(p.idx) + "</b></span>" +
@@ -598,6 +612,29 @@
     }
   }
 
+  function isPick(r, p) { return state.shown.some(function (x) { return r.picks[x] === p; }); }
+  function shapeEl(name, g) {
+    var sh = window.LBM_SHAPES[name] || window.LBM_SHAPES.circle, a = { "class": "shape" };
+    for (var k in sh[1]) a[k] = sh[1][k];
+    return svgEl(sh[0], a, g);
+  }
+  function renderLegend() {
+    $("#legend-providers").innerHTML = state.shown.map(function (p) {
+      var svg = svgEl("svg", { viewBox: "-8 -8 16 16", "aria-hidden": "true" });
+      shapeEl(PROV[p].shape, svgEl("g", { "class": "pt " + p }, svg));
+      return "<li>" + svg.outerHTML + esc(provName(p)) + "</li>";
+    }).join("");
+  }
+  function renderProviders() {
+    var full = state.shown.length >= MAX_SHOWN;
+    $("#providers").innerHTML = PROVIDERS.map(function (pv) {
+      var on = isShown(pv.id), blocked = !on && full;
+      return '<button type="button" class="prov" data-prov="' + pv.id + '" aria-pressed="' + on + '"' + (blocked ? ' aria-disabled="true" title="' + MAX_SHOWN + ' éditeurs au plus : retirez-en un"' : "") + ">" +
+        markHTML(pv.id) + esc(pv.name) + "</button>";
+    }).join("");
+    $("#providers-note").textContent = full ? MAX_SHOWN + " éditeurs au plus côte à côte : retirez-en un pour en ajouter un autre." : "Jusqu'à " + MAX_SHOWN + " éditeurs côte à côte.";
+  }
+
   /* ---------- Classement ---------- */
   function renderRanking(r) {
     var u = r.u;
@@ -622,11 +659,18 @@
         "<div><dt>Sortie</dt><dd>" + esc(frDate(m.released)) + ", " + gen + "</dd></div>" +
         "</dl></details></li>";
     }
-    r.sufficient.forEach(function (p, i) { rows.push(rowHTML(p, i === 0)); });
-    if (r.insufficient.length) {
+    /* Replié à RANK_MAX lignes */
+    var room = state.rankAll ? Infinity : RANK_MAX;
+    var suf = r.sufficient.slice(0, room), ins = r.insufficient.slice(0, Math.max(0, room - suf.length));
+    suf.forEach(function (p, i) { rows.push(rowHTML(p, i === 0)); });
+    if (ins.length) {
       rows.push('<li class="rank-sep">En dessous de votre niveau, même au réglage maximal</li>');
-      r.insufficient.forEach(function (p) { rows.push(rowHTML(p, false)); });
+      ins.forEach(function (p) { rows.push(rowHTML(p, false)); });
     }
+    var total = r.perModel.length, hidden = total - suf.length - ins.length, more = $("#rank-more");
+    more.hidden = total <= RANK_MAX;
+    more.textContent = state.rankAll ? "Replier le classement" : "Voir " + (hidden > 1 ? "les " + hidden + " autres modèles" : "l'autre modèle");
+    more.setAttribute("aria-expanded", state.rankAll ? "true" : "false");
     var list = $("#ranking");
     list.innerHTML = rows.join("");
     $$(".row", list).forEach(function (row) {
@@ -645,7 +689,7 @@
   function renderLadder() {
     var html = D.levels.map(function (lvl) {
       var who = [];
-      D.models.forEach(function (m) {
+      shownModels().forEach(function (m) {
         var c = m.levels.filter(function (lv) { return lv.idx >= lvl.min; }).sort(function (a, b) { return a.idx - b.idx; })[0];
         if (c) who.push("<li>" + markHTML(m.provider) + esc(m.short) + " <em>" + esc(c.e === "none" ? "sans réflexion" : c.e === "reasoning" ? "réflexion" : effortLabel(c.e)) + "</em></li>");
       });
@@ -664,7 +708,7 @@
     }).join("");
     var nf4 = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 4 });
     $("#fx-note").textContent = "Taux de change de la BCE du " + D.fx.date + NB + ": 1" + NB + "$ = " + nf4.format(FX) + NB + "€. " +
-      "Prix de l'API hors TVA. Abonnements en TTC pour la France" + NB + ": grille officielle en euros pour ChatGPT, prix en dollars convertis avec 20" + NB + "% de TVA pour Claude.";
+      "Prix de l'API hors TVA. Abonnements en TTC pour la France" + NB + ": grille officielle en euros quand l'éditeur la publie (ChatGPT, Gemini), sinon prix en dollars convertis avec 20" + NB + "% de TVA.";
     $("#updated").textContent = D.updatedLabel;
   }
 
@@ -678,17 +722,17 @@
 
   function renderDuo(r) {
     var u = r.u, access = effectiveAccess(u), html = "";
-    ["openai", "anthropic"].forEach(function (p) {
+    state.shown.forEach(function (p) {
       html += '<article class="duo-card"><p class="duo-top">' + markHTML(p) + "Chez " + provName(p) + "</p>";
       if (access === "app") {
         var res = recommendPlan(p, u, r.req);
         if (!res) {
-          html += '<p class="duo-empty">Aucune offre ' + esc(provName(p)) + " n'atteint ce niveau. Comparez avec l'API.</p></article>";
+          html += '<p class="duo-empty">' + esc(plansOf(p).length ? "Aucune offre " + PROV[p].app + " n'atteint ce niveau. Comparez avec l'API." : provName(p) + " ne vend pas d'abonnement en France : comparez avec l'API.") + "</p></article>";
           return;
         }
         var b = res.best;
         html += '<p class="duo-name">' + esc(res.plan.name) + "</p>" +
-          '<p class="duo-figure num">' + esc(planPriceText(p, res.plan)) + "<span>" + (res.plan.usd === 0 ? "dans la limite des plafonds d'usage" : state.cur === "EUR" ? "par mois, TTC" : "par mois, hors taxes") + "</span></p>" +
+          '<p class="duo-figure num">' + esc(planPriceText(p, res.plan)) + "<span>" + (isFree(res.plan) ? "dans la limite des plafonds d'usage" : state.cur === "EUR" ? "par mois, TTC" : "par mois, hors taxes") + "</span></p>" +
           '<p class="duo-level">' + levelChips(b.lv.idx, r.req, true) + "</p>" +
           '<p class="duo-why">' + (res.heavy
             ? "Usage très intensif&nbsp;: en API, il coûterait environ <strong>" + money(res.eqUsd) + "</strong> par mois, au-delà de ce que les abonnements absorbent d'habitude."
@@ -706,10 +750,12 @@
       html += "</article>";
     });
     $("#duo").innerHTML = html;
+    $("#duo").setAttribute("data-n", String(state.shown.length));
   }
 
   function update() {
     var r = compute();
+    renderLadder();
     renderVolume(false);
     renderNotes(r.u);
     renderDuo(r);
@@ -776,6 +822,16 @@
       b.addEventListener("click", function () { state.cur = b.getAttribute("data-cur"); update(); });
     });
     $("#show-all").addEventListener("change", function (e) { state.showAll = e.target.checked; drawChart(compute(), false); });
+    $("#providers").addEventListener("click", function (e) {
+      var b = e.target.closest(".prov"); if (!b) return;
+      var p = b.getAttribute("data-prov");
+      if (isShown(p)) { if (state.shown.length === 1) return; state.shown = state.shown.filter(function (x) { return x !== p; }); }
+      else { if (state.shown.length >= MAX_SHOWN) return; state.shown.push(p); }
+      state.open = {}; state.hl = null;
+      renderProviders(); update();
+      var nb = $('.prov[data-prov="' + p + '"]'); if (nb) nb.focus();
+    });
+    $("#rank-more").addEventListener("click", function () { state.rankAll = !state.rankAll; renderRanking(compute()); });
     $("#controls").addEventListener("submit", function (e) { e.preventDefault(); });
     $("#theme-toggle").addEventListener("click", function () {
       var next = currentTheme() === "dark" ? "light" : "dark";
@@ -785,11 +841,12 @@
     });
   }
 
-  /* ---------- Recherche par Claude Haiku ----------
+  /* ---------- Recherche ----------
      Applique une intention renvoyée par le proxy (../assets/ai-search.js).
      Chaque valeur est revalidée contre les données de la page ; la phrase
      de réponse est composée ici, à partir des seuls libellés du site. */
   var EXIG_IA = { premier_jet: -1, fiable: 0, sans_faute: 1 };
+  function orList(a) { return a.length < 2 ? a.join("") : a.slice(0, -1).join(" ; ") + " ; ou " + a[a.length - 1]; }
   window.LBM_PAGE = {
     id: "budget",
     resultAnchor: "#results",
@@ -802,6 +859,11 @@
       if (EXIG_IA.hasOwnProperty(it.exigence)) state.exig = EXIG_IA[it.exigence];
       if (it.acces === "app" || it.acces === "api") state.access = it.acces;
       if (profileById[state.profile].usages.indexOf(u.id) === -1) state.expanded = true;
+      if (it.editeur && PROV[it.editeur] && !isShown(it.editeur)) {
+        if (state.shown.length >= MAX_SHOWN) state.shown.pop();
+        state.shown.push(it.editeur);
+        renderProviders();
+      }
       state.open = {};
       $("#exig-" + (state.exig === -1 ? "low" : state.exig === 1 ? "high" : "mid")).checked = true;
       renderUsages();
@@ -812,18 +874,18 @@
       var head = "Usage retenu : " + u.label.charAt(0).toLowerCase() + u.label.slice(1) + ", " +
         nf0.format(state.volume) + " " + singular(u.unit, state.volume) + " par mois, " +
         (access === "api" ? "par l'API" : "avec un abonnement") + ".";
-      ["openai", "anthropic"].forEach(function (p) {
+      state.shown.forEach(function (p) {
         if (access === "app") {
           var res = recommendPlan(p, u, r.req);
-          if (res) parts.push(res.plan.name + (res.plan.usd === 0 ? " (gratuit)" : " (" + planPriceText(p, res.plan) + " par mois)"));
+          if (res) parts.push(res.plan.name + (isFree(res.plan) ? " (gratuit)" : " (" + planPriceText(p, res.plan) + " par mois)"));
         } else {
           var c = r.picks[p];
           if (c) parts.push(c.m.name + " chez " + provName(p) + ", environ " + money(c.month) + " par mois");
         }
       });
       var tail = !parts.length ? " Aucune offre n'atteint ce niveau : voyez le classement ci-dessous."
-        : access === "app" ? " Abonnement suffisant : " + parts.join(" ou ") + "."
-        : " Le plus économique au bon niveau : " + parts.join(", ou ") + ".";
+        : access === "app" ? " Abonnement suffisant : " + orList(parts) + "."
+        : " Le plus économique au bon niveau : " + orList(parts) + ".";
       return { phrase: (head + tail).replace(/ ([:;!?])/g, NB + "$1") };
     }
   };
@@ -834,7 +896,7 @@
   renderUsages();
   $("#exig-" + (state.exig === -1 ? "low" : state.exig === 1 ? "high" : "mid")).checked = true;
   renderVolume(true);
-  renderLadder();
+  renderProviders();
   renderSources();
   initChart();
   bind();

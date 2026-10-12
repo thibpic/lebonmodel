@@ -146,48 +146,206 @@
         "hint": "Déboguer, refactorer, migrer"
       }
     ],
-    "chatgpt": [
+    "editeurs": [
       {
-        "id": "free",
-        "label": "ChatGPT Gratuit"
+        "id": "openai",
+        "label": "OpenAI",
+        "app": "ChatGPT"
       },
       {
-        "id": "go",
-        "label": "ChatGPT Go"
+        "id": "anthropic",
+        "label": "Anthropic",
+        "app": "Claude"
       },
       {
-        "id": "plus",
-        "label": "ChatGPT Plus"
+        "id": "google",
+        "label": "Google",
+        "app": "Gemini"
       },
       {
-        "id": "pro",
-        "label": "ChatGPT Pro"
+        "id": "mistral",
+        "label": "Mistral",
+        "app": "Vibe"
       },
       {
-        "id": "business",
-        "label": "ChatGPT Business"
+        "id": "xai",
+        "label": "xAI",
+        "app": "Grok"
+      },
+      {
+        "id": "deepseek",
+        "label": "DeepSeek",
+        "app": "DeepSeek"
+      },
+      {
+        "id": "meta",
+        "label": "Meta",
+        "app": "Meta AI"
+      },
+      {
+        "id": "alibaba",
+        "label": "Alibaba",
+        "app": "Qwen"
       }
     ],
-    "claude": [
-      {
-        "id": "free",
-        "label": "Claude Gratuit"
+    "abonnements": {
+      "chatgpt": {
+        "editeur": "openai",
+        "app": "ChatGPT",
+        "offres": [
+          {
+            "id": "free",
+            "label": "ChatGPT Gratuit"
+          },
+          {
+            "id": "go",
+            "label": "ChatGPT Go"
+          },
+          {
+            "id": "plus",
+            "label": "ChatGPT Plus"
+          },
+          {
+            "id": "pro",
+            "label": "ChatGPT Pro"
+          },
+          {
+            "id": "business",
+            "label": "ChatGPT Business"
+          }
+        ]
       },
-      {
-        "id": "pro",
-        "label": "Claude Pro"
+      "claude": {
+        "editeur": "anthropic",
+        "app": "Claude",
+        "offres": [
+          {
+            "id": "free",
+            "label": "Claude Gratuit"
+          },
+          {
+            "id": "pro",
+            "label": "Claude Pro"
+          },
+          {
+            "id": "max",
+            "label": "Claude Max 5x"
+          },
+          {
+            "id": "team",
+            "label": "Claude Team"
+          }
+        ]
       },
-      {
-        "id": "max",
-        "label": "Claude Max 5x"
+      "gemini": {
+        "editeur": "google",
+        "app": "Gemini",
+        "offres": [
+          {
+            "id": "free",
+            "label": "Gemini Gratuit"
+          },
+          {
+            "id": "plus",
+            "label": "Google AI Plus"
+          },
+          {
+            "id": "pro",
+            "label": "Google AI Pro"
+          },
+          {
+            "id": "ultra",
+            "label": "Google AI Ultra"
+          }
+        ]
       },
-      {
-        "id": "team",
-        "label": "Claude Team"
+      "vibe": {
+        "editeur": "mistral",
+        "app": "Vibe",
+        "offres": [
+          {
+            "id": "free",
+            "label": "Vibe Gratuit"
+          },
+          {
+            "id": "pro",
+            "label": "Vibe Pro"
+          },
+          {
+            "id": "team",
+            "label": "Vibe Team"
+          }
+        ]
+      },
+      "grok": {
+        "editeur": "xai",
+        "app": "Grok",
+        "offres": [
+          {
+            "id": "supergrok",
+            "label": "SuperGrok"
+          },
+          {
+            "id": "business",
+            "label": "Grok Business"
+          }
+        ]
+      },
+      "deepseek": {
+        "editeur": "deepseek",
+        "app": "DeepSeek",
+        "offres": [
+          {
+            "id": "free",
+            "label": "DeepSeek Gratuit"
+          }
+        ]
       }
-    ]
+    }
   },
   "budget": {
+    "editeurs": [
+      {
+        "id": "openai",
+        "label": "OpenAI",
+        "app": "ChatGPT"
+      },
+      {
+        "id": "anthropic",
+        "label": "Anthropic",
+        "app": "Claude"
+      },
+      {
+        "id": "google",
+        "label": "Google",
+        "app": "Gemini"
+      },
+      {
+        "id": "mistral",
+        "label": "Mistral",
+        "app": "Vibe"
+      },
+      {
+        "id": "xai",
+        "label": "xAI",
+        "app": "Grok"
+      },
+      {
+        "id": "deepseek",
+        "label": "DeepSeek",
+        "app": "DeepSeek"
+      },
+      {
+        "id": "meta",
+        "label": "Meta",
+        "app": "Meta AI"
+      },
+      {
+        "id": "alibaba",
+        "label": "Alibaba",
+        "app": "Qwen"
+      }
+    ],
     "usages": [
       {
         "id": "question",
