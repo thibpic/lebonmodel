@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { buildCatalog } from "../scripts/build-catalog.mjs";
 import { cleanPhrase, cleanQuery, outputSchema, validate } from "../src/contract.js";
 import { systemPrompt, userMessage } from "../src/prompt.js";
-import worker, { interpret } from "../src/index.js";
+import worker, { backend, interpret } from "../src/index.js";
 
 const ORIGIN = "https://lebonmodel.numenys.fr";
 const ENV = { ALLOWED_ORIGINS: ORIGIN, PHRASE_LIBRE: "off", ANTHROPIC_API_KEY: "test" };
@@ -123,4 +123,47 @@ test("le Worker filtre origine, méthode, format, taille et débit avant d'appel
   assert.equal((await worker.fetch(req("{" + " ".repeat(3000) + "}"), ENV)).status, 413);
   const limited = { ...ENV, RL_IP: { limit: async () => ({ success: false }) } };
   assert.equal((await worker.fetch(req({ page: "modele", q: "relire un contrat" }), limited)).status, 429);
+});
+
+function fakeFetch(body, status) {
+  const calls = [];
+  const f = async (url, init) => {
+    calls.push({ url, init, body: JSON.parse(init.body) });
+    return new Response(JSON.stringify(body), { status: status || 200, headers: { "content-type": "application/json" } });
+  };
+  f.calls = calls;
+  return f;
+}
+const ENV_OR = { ...ENV, OPENROUTER_API_KEY: "or-test", OPENROUTER_MODEL: "fournisseur/modele" };
+const orReply = (content, finish, refusal) => ({ choices: [{ finish_reason: finish || "stop", message: { role: "assistant", content, refusal: refusal || null } }] });
+
+test("OpenRouter n'est utilisé que si le modèle et la clé sont posés", () => {
+  assert.equal(backend(ENV), "anthropic");
+  assert.equal(backend({ ...ENV, OPENROUTER_MODEL: "x/y" }), "anthropic");
+  assert.equal(backend({ ...ENV, OPENROUTER_API_KEY: "k" }), "anthropic");
+  assert.equal(backend(ENV_OR), "openrouter");
+});
+
+test("interpret via OpenRouter envoie le modèle configuré avec un schéma strict et revalide", async () => {
+  const f = fakeFetch(orReply(JSON.stringify(okModele)));
+  assert.deepEqual(await interpret(ENV_OR, "modele", "relire un contrat", f), okModele);
+  const { url, init, body } = f.calls[0];
+  assert.equal(url, "https://openrouter.ai/api/v1/chat/completions");
+  assert.equal(init.headers.authorization, "Bearer or-test");
+  assert.equal(body.model, "fournisseur/modele");
+  assert.equal(body.response_format.type, "json_schema");
+  assert.equal(body.response_format.json_schema.strict, true);
+  assert.deepEqual(body.response_format.json_schema.schema, outputSchema("modele", false));
+  assert.equal(body.provider.require_parameters, true);
+  assert.equal(body.messages[0].role, "system");
+  assert.equal(body.messages.at(-1).content, userMessage("relire un contrat"));
+});
+
+test("interpret via OpenRouter rejette une sortie invalide, tronquée, refusée ou en erreur", async () => {
+  assert.equal(await interpret(ENV_OR, "modele", "x x", fakeFetch(orReply('{"pertinent":true}'))), null);
+  assert.equal(await interpret(ENV_OR, "modele", "x x", fakeFetch(orReply("pas du json"))), null);
+  assert.equal(await interpret(ENV_OR, "modele", "x x", fakeFetch(orReply(JSON.stringify(okModele), "length"))), null);
+  assert.deepEqual(await interpret(ENV_OR, "modele", "x x", fakeFetch(orReply(null, "stop", "non"))), { pertinent: false });
+  assert.equal(await interpret(ENV_OR, "modele", "x x", fakeFetch({ choices: [] })), null);
+  await assert.rejects(interpret(ENV_OR, "modele", "x x", fakeFetch({ error: { message: "x" } }, 401)));
 });

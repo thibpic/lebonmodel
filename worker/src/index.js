@@ -1,5 +1,7 @@
 /*
-  lebonmodel, proxy de recherche propulsé par Claude Haiku 5.5 (Cloudflare Worker).
+  lebonmodel, proxy de recherche (Cloudflare Worker).
+  Modèle : celui d'OpenRouter nommé par OPENROUTER_MODEL dès que ce réglage et le secret
+  OPENROUTER_API_KEY sont posés ; sinon Claude Haiku 5.5 en direct (ANTHROPIC_API_KEY).
 
   POST /recherche  { "page": "modele" | "budget", "q": "..." }
   → 200 { "page": ..., "intention": { ...valeurs fermées... } }
@@ -10,14 +12,16 @@
   3. Demande nettoyée et bornée à 300 caractères, encadrée et neutralisée dans le prompt.
   4. Sortie imposée par un schéma JSON à valeurs fermées (structured outputs).
   5. Sortie revalidée ici ; tout écart est rejeté. Le navigateur revalide encore.
-  La clé d'API ne quitte jamais le Worker (secret ANTHROPIC_API_KEY).
+  Les clés d'API ne quittent jamais le Worker (secrets OPENROUTER_API_KEY, ANTHROPIC_API_KEY).
 */
 import Anthropic from "@anthropic-ai/sdk";
 import { PAGES, cleanQuery, outputSchema, validate } from "./contract.js";
 import { systemPrompt, userMessage } from "./prompt.js";
 
 const MODEL = "claude-haiku-5-5";
+const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const MAX_BODY = 2048;
+const MAX_TOKENS = 1024;
 
 function origins(env) {
   return String(env.ALLOWED_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean);
@@ -45,12 +49,23 @@ async function underLimit(binding, key) {
   return success;
 }
 
-export async function interpret(env, page, query, client) {
-  const withPhrase = env.PHRASE_LIBRE === "on";
+/* OpenRouter si le modèle et la clé sont posés, sinon Anthropic en direct */
+export function backend(env) {
+  return env.OPENROUTER_MODEL && env.OPENROUTER_API_KEY ? "openrouter" : "anthropic";
+}
+
+function parseOut(page, text, withPhrase) {
+  if (typeof text !== "string") return null;
+  let parsed;
+  try { parsed = JSON.parse(text); } catch (e) { return null; }
+  return validate(page, parsed, withPhrase);
+}
+
+async function viaAnthropic(env, page, query, withPhrase, client) {
   const anthropic = client || new Anthropic({ apiKey: env.ANTHROPIC_API_KEY, timeout: 15000, maxRetries: 1 });
   const msg = await anthropic.messages.create({
     model: MODEL,
-    max_tokens: 1024,
+    max_tokens: MAX_TOKENS,
     system: [{ type: "text", text: systemPrompt(page, withPhrase), cache_control: { type: "ephemeral" } }],
     messages: [{ role: "user", content: userMessage(query) }],
     output_config: { effort: "low", format: { type: "json_schema", schema: outputSchema(page, withPhrase) } }
@@ -58,10 +73,54 @@ export async function interpret(env, page, query, client) {
   if (msg.stop_reason === "refusal") return { pertinent: false };
   if (msg.stop_reason !== "end_turn") return null;
   const block = msg.content.find((b) => b.type === "text");
-  if (!block) return null;
-  let parsed;
-  try { parsed = JSON.parse(block.text); } catch (e) { return null; }
-  return validate(page, parsed, withPhrase);
+  return block ? parseOut(page, block.text, withPhrase) : null;
+}
+
+/*
+  OpenRouter, API compatible OpenAI. require_parameters écarte les hébergeurs qui ne
+  savent pas imposer le schéma JSON ; data_collection "deny" ceux qui gardent les demandes.
+*/
+async function viaOpenRouter(env, page, query, withPhrase, fetcher) {
+  const res = await (fetcher || fetch)(OPENROUTER_URL, {
+    method: "POST",
+    headers: {
+      "authorization": "Bearer " + env.OPENROUTER_API_KEY,
+      "content-type": "application/json",
+      "http-referer": "https://lebonmodel.numenys.fr",
+      "x-title": "lebonmodel"
+    },
+    body: JSON.stringify({
+      model: env.OPENROUTER_MODEL,
+      max_tokens: MAX_TOKENS,
+      temperature: 0,
+      reasoning: { effort: "low", exclude: true },
+      messages: [
+        { role: "system", content: systemPrompt(page, withPhrase) },
+        { role: "user", content: userMessage(query) }
+      ],
+      response_format: { type: "json_schema", json_schema: { name: "reglages", strict: true, schema: outputSchema(page, withPhrase) } },
+      provider: { require_parameters: true, data_collection: "deny" }
+    }),
+    signal: AbortSignal.timeout(15000)
+  });
+  if (!res.ok) {
+    const err = new Error("openrouter");
+    err.status = res.status;
+    throw err;
+  }
+  const data = await res.json();
+  const choice = data && data.choices && data.choices[0];
+  if (!choice || !choice.message) return null;
+  if (choice.message.refusal) return { pertinent: false };
+  if (choice.finish_reason !== "stop") return null;
+  return parseOut(page, choice.message.content, withPhrase);
+}
+
+/* client : client Anthropic ou fonction fetch simulés, pour les tests */
+export async function interpret(env, page, query, client) {
+  const withPhrase = env.PHRASE_LIBRE === "on";
+  if (backend(env) === "openrouter") return viaOpenRouter(env, page, query, withPhrase, client);
+  return viaAnthropic(env, page, query, withPhrase, client);
 }
 
 export default {
@@ -92,7 +151,7 @@ export default {
     try {
       intention = await interpret(env, body.page, q);
     } catch (e) {
-      console.log("anthropic", e && e.status, e && e.name);
+      console.log(backend(env), e && e.status, e && e.name);
       return json({ erreur: "indisponible" }, 502, allowed);
     }
     if (!intention) return json({ erreur: "sortie_invalide" }, 502, allowed);

@@ -8,6 +8,9 @@ compatibility_flags = ["nodejs_compat"]
 ALLOWED_ORIGINS = "https://lebonmodel.numenys.fr"
 # Reformulation libre par Haiku : "off" tant que son cadrage n'est pas validé
 PHRASE_LIBRE = "off"
+# Modèle de la recherche via OpenRouter (identifiant OpenRouter, par exemple "google/gemini-...").
+# Vide, ou sans secret OPENROUTER_API_KEY : la recherche reste sur Claude Haiku 5.5 en direct.
+OPENROUTER_MODEL = ""
 
 # 8 demandes par minute et par adresse IP
 [[ratelimits]]
@@ -21,4 +24,6 @@ name = "RL_GLOBAL"
 namespace_id = "1002"
 simple = { limit = 120, period = 60 }
 
-# Secret à définir une fois : npx wrangler secret put ANTHROPIC_API_KEY
+# Secrets à définir une fois :
+#   npx wrangler secret put OPENROUTER_API_KEY   (recherche via OpenRouter)
+#   npx wrangler secret put ANTHROPIC_API_KEY    (repli sur Claude Haiku 5.5 en direct)
