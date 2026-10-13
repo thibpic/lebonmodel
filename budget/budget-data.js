@@ -14,7 +14,7 @@
 window.LBM_BUDGET = {
   updated: "2026-10-12",
   updatedLabel: "12 octobre 2026",
-  fx: { usdToEur: 0.8924, vat: 0.2, date: "9 octobre 2026", source: "Banque centrale européenne" },
+  fx: { usdToEur: 0.8944, vat: 0.2, date: "12 octobre 2026", source: "Banque centrale européenne" },
 
   /* Éditeurs, noms et formes : assets/providers.js, partagé avec la page principale */
 
