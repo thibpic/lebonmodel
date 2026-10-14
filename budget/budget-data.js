@@ -12,9 +12,9 @@
   est  : score estimé par Artificial Analysis (pas de mesure complète)
 */
 window.LBM_BUDGET = {
-  updated: "2026-10-12",
-  updatedLabel: "12 octobre 2026",
-  fx: { usdToEur: 0.8924, vat: 0.2, date: "9 octobre 2026", source: "Banque centrale européenne" },
+  updated: "2026-10-13",
+  updatedLabel: "13 octobre 2026",
+  fx: { usdToEur: 0.8938, vat: 0.2, date: "13 octobre 2026", source: "Banque centrale européenne" },
 
   /* Éditeurs, noms et formes : assets/providers.js, partagé avec la page principale */
 
@@ -314,6 +314,15 @@ window.LBM_BUDGET = {
       levels: [
         { e: "xhigh", idx: 45, task: 1.37, out: 79681, tps: 269.2 },
         { e: "max", idx: 48, task: 1.6, out: 96756, tps: 177 }
+      ]
+    },
+    {
+      id: "musewonder", provider: "meta", name: "Muse Wonder", short: "Wonder",
+      tier: "Haut de gamme", generation: "actuelle", released: "2026-10-12",
+      price: { in: 4, cache: 0.2, out: 20 }, tok: 1, ctx: "1 M tokens",
+      apps: "API ; l'appli Meta AI ne le propose pas en France",
+      levels: [
+        { e: "max", idx: 52, task: 4.52, out: 118985, tps: 115 }
       ]
     },
     {
