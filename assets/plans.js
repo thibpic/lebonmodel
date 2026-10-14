@@ -12,7 +12,7 @@
   reprennent uniquement ce que les éditeurs publient.
   Un éditeur sans entrée ici (Meta, Alibaba) se compare à l'API seulement.
 */
-window.LBM_FX = { usdToEur: 0.8924, vat: 0.2, date: "9 octobre 2026" };
+window.LBM_FX = { usdToEur: 0.8938, vat: 0.2, date: "13 octobre 2026" };
 
 window.LBM_PLANS = {
   openai: [
