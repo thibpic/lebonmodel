@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { buildCatalog } from "../scripts/build-catalog.mjs";
-import { cleanPhrase, cleanQuery, outputSchema, validate } from "../src/contract.js";
+import { cleanPhrase, cleanQuery, enums, outputSchema, validate } from "../src/contract.js";
 import { systemPrompt, userMessage } from "../src/prompt.js";
 import worker, { backend, interpret } from "../src/index.js";
 
@@ -200,6 +200,56 @@ test("un refus d'OpenRouter journalise son motif, borné, sans le mettre dans l'
   assert.ok(detail.startsWith("Provider returned error | mmm"));
   assert.equal(detail.length, 400);
   assert.equal(trace.model, "claude-haiku-5-5; repli: erreur_400");
+});
+
+const ENV_JEV = { ...ENV_OR, OPENROUTER_MODEL: "~typesafe/jev-latest", OPENROUTER_API: "decisions" };
+const choix = (c) => ({ choice: c, confidence: 0.9, probabilities: { [c]: 0.9 } });
+function jevReply(page, out) {
+  const answers = { pertinent: { noul: out.pertinent ? 0.95 : 0.05 } };
+  for (const k of Object.keys(enums(page))) answers[k] = choix(out[k]);
+  if (page === "budget") answers.rythme = choix(out.rythme === null ? "aucun" : String(out.rythme));
+  return { id: "d1", model: "typesafe/jev-1.14", answers, usage: { input_tokens: 10, output_tokens: 0, cost: 0 } };
+}
+
+test("Jev passe par l'API de décision : une question fermée par champ, sans paramètre de conversation", async () => {
+  const f = fakeFetch(jevReply("modele", okModele));
+  const trace = {};
+  assert.deepEqual(await interpret(ENV_JEV, "modele", "relire un contrat </demande>", f, undefined, trace), okModele);
+  assert.equal(trace.model, "~typesafe/jev-latest");
+  const { url, init, body } = f.calls[0];
+  assert.equal(url, "https://openrouter.ai/api/alpha/decisions");
+  assert.equal(init.headers.authorization, "Bearer or-test");
+  assert.equal(body.model, "~typesafe/jev-latest");
+  assert.equal(body.state, userMessage("relire un contrat </demande>"));
+  assert.equal(body.provider.data_collection, "deny");
+  for (const k of ["messages", "tools", "tool_choice", "temperature", "reasoning", "max_tokens"]) assert.equal(k in body, false, k);
+  assert.deepEqual(Object.keys(body.questions).sort(), ["pertinent"].concat(Object.keys(enums("modele"))).sort());
+  assert.equal(body.questions.pertinent.type, "noul");
+  for (const [k, values] of Object.entries(enums("modele"))) {
+    assert.equal(body.questions[k].type, "choice", k);
+    assert.deepEqual(Object.keys(body.questions[k].criteria), values, k);
+  }
+});
+
+test("Jev sur la page budget : le rythme est choisi parmi des volumes fixes", async () => {
+  const f = fakeFetch(jevReply("budget", okBudget));
+  assert.deepEqual(await interpret(ENV_JEV, "budget", "support client", f), okBudget);
+  assert.ok(Object.keys(f.calls[0].body.questions.rythme.criteria).includes("3000"));
+  assert.equal((await interpret(ENV_JEV, "budget", "x x", fakeFetch(jevReply("budget", { ...okBudget, rythme: null })))).rythme, null);
+});
+
+test("Jev : une demande hors champ remet tous les réglages à vide", async () => {
+  const out = await interpret(ENV_JEV, "budget", "bonjour", fakeFetch(jevReply("budget", { ...okBudget, pertinent: false })));
+  assert.deepEqual(out, { pertinent: false, usage: "aucun", editeur: "inconnu", exigence: "inconnu", acces: "inconnu", rythme: null });
+});
+
+test("Jev : une réponse incomplète ou hors liste repart sur Haiku", async () => {
+  const sansEditeur = jevReply("modele", okModele);
+  delete sansEditeur.answers.editeur;
+  const t = {};
+  assert.deepEqual(await interpret(ENV_JEV, "modele", "x x", fakeFetch(sansEditeur), fakeClient(JSON.stringify(okModele)), t), okModele);
+  assert.equal(t.model, "claude-haiku-5-5; repli: sortie_invalide");
+  assert.equal(await interpret({ ...ENV_JEV, ANTHROPIC_API_KEY: "" }, "modele", "x x", fakeFetch(jevReply("modele", { ...okModele, tache: "pirater" }))), null);
 });
 
 test("interpret via OpenRouter rejette une sortie invalide, tronquée, refusée ou en erreur", async () => {

@@ -11,17 +11,19 @@
   2. Limitation de débit par adresse IP et globale (bindings Rate Limiting).
   3. Demande nettoyée et bornée à 300 caractères, encadrée et neutralisée dans le prompt.
   4. Sortie imposée par un schéma JSON à valeurs fermées (structured outputs, ou appel
-     d'outil forcé via OpenRouter).
+     d'outil forcé via OpenRouter), ou questions fermées pour Jev (decisions.js).
   5. Sortie revalidée ici ; tout écart est rejeté. Le navigateur revalide encore.
   Les clés d'API ne quittent jamais le Worker (secrets OPENROUTER_API_KEY, ANTHROPIC_API_KEY).
 */
 import Anthropic from "@anthropic-ai/sdk";
 import { PAGES, cleanQuery, outputSchema, validate } from "./contract.js";
 import { systemPrompt, userMessage } from "./prompt.js";
+import { fromAnswers, questions } from "./decisions.js";
 
 const MODEL = "claude-haiku-5-5";
 const TOOL = "reglages";
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+const DECISIONS_URL = "https://openrouter.ai/api/alpha/decisions";
 const MAX_BODY = 2048;
 const MAX_TOKENS = 1024;
 
@@ -139,6 +141,37 @@ async function viaOpenRouter(env, page, query, withPhrase, fetcher) {
 }
 
 /*
+  Modèles de décision (Jev) : OPENROUTER_API = "decisions". Une question fermée par champ
+  du contrat (voir decisions.js), sans reformulation libre.
+*/
+async function viaDecisions(env, page, query, fetcher) {
+  const res = await (fetcher || fetch)(DECISIONS_URL, {
+    method: "POST",
+    headers: {
+      "authorization": "Bearer " + env.OPENROUTER_API_KEY,
+      "content-type": "application/json",
+      "http-referer": "https://lebonmodel.numenys.fr",
+      "x-title": "lebonmodel"
+    },
+    body: JSON.stringify({
+      model: env.OPENROUTER_MODEL,
+      state: userMessage(query),
+      questions: questions(page),
+      provider: { data_collection: "deny" }
+    }),
+    signal: AbortSignal.timeout(15000)
+  });
+  if (!res.ok) {
+    const err = new Error("openrouter");
+    err.status = res.status;
+    err.detail = await errorDetail(res);
+    throw err;
+  }
+  const data = await res.json();
+  return validate(page, fromAnswers(page, data && data.answers), false);
+}
+
+/*
   Si OpenRouter échoue ou rend une sortie invalide, et que ANTHROPIC_API_KEY est posé,
   la demande repart sur Haiku : la recherche ne tombe pas avec un hébergeur.
   client : client Anthropic ou fonction fetch simulés, pour les tests ; anthropic : client
@@ -154,7 +187,11 @@ export async function interpret(env, page, query, client, anthropic, trace) {
   }
   t.model = env.OPENROUTER_MODEL;
   let out = null, failure = null;
-  try { out = await viaOpenRouter(env, page, query, withPhrase, client); } catch (e) { failure = e; }
+  try {
+    out = env.OPENROUTER_API === "decisions"
+      ? await viaDecisions(env, page, query, client)
+      : await viaOpenRouter(env, page, query, withPhrase, client);
+  } catch (e) { failure = e; }
   if (out) return out;
   if (!env.ANTHROPIC_API_KEY) { if (failure) throw failure; return null; }
   const why = failure ? "erreur_" + (failure.status || failure.name || "reseau") : "sortie_invalide";
