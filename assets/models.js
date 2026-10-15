@@ -1,4 +1,4 @@
-/* Généré depuis les données publiques d'Artificial Analysis (Intelligence Index v4.3.2), 6 octobre 2026, mis à jour le 13 octobre 2026.
+/* Généré depuis les données publiques d'Artificial Analysis (Intelligence Index v4.3.2), 6 octobre 2026, mis à jour le 14 octobre 2026.
    Muse Wonder (Meta, 12 octobre 2026) : Artificial Analysis publie l'indice (52), le coût par tâche (4,52 $) et la vitesse,
    pas encore le détail par évaluation ; scores et coûts par évaluation estimés depuis GPT-6.1 Sol (max), indice le plus proche.
    s : scores par évaluation, normalisés de 0 à 1 (Elo : (Elo - 500) / 2000).

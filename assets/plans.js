@@ -12,7 +12,7 @@
   reprennent uniquement ce que les éditeurs publient.
   Un éditeur sans entrée ici (Meta, Alibaba) se compare à l'API seulement.
 */
-window.LBM_FX = { usdToEur: 0.8938, vat: 0.2, date: "13 octobre 2026" };
+window.LBM_FX = { usdToEur: 0.8933, vat: 0.2, date: "14 octobre 2026" };
 
 window.LBM_PLANS = {
   openai: [
@@ -69,7 +69,8 @@ window.LBM_PLANS = {
       ctx: null,
       volume: ["1,25 fois le volume de Pro par personne", "Claude Code inclus"] }
   ],
-  /* Google, vérifié le 12 octobre 2026. Gemini 4 Argon n'est pas encore dans l'appli (programme Fairwind seulement).
+  /* Google, vérifié le 14 octobre 2026. Gemini 4 Argon arrive dans l'appli pour AI Pro et AI Ultra depuis le 13 octobre (notes de version Gemini) ;
+     son accès dans Jules ou Antigravity n'est pas confirmé par Google : le code reste sur Gemini 3.8 Flash.
      AI Plus donne Gemini 3.6 Flash et 3.1 Pro, absents d'Artificial Analysis : seul Flash-Lite y est comparé. */
   google: [
     { id: "free", name: "Gemini Gratuit", short: "Gratuit", eur: 0, usd: 0,
@@ -79,11 +80,11 @@ window.LBM_PLANS = {
       chat: "gemini35lite", code: [], ctx: 128000,
       volume: ["2 fois les limites de l'offre gratuite", "Gemini 3.6 Flash et 3.1 Pro, non comparés ici"] },
     { id: "pro", name: "Google AI Pro", short: "AI Pro", eur: 21.99, usd: 19.99,
-      chat: "gemini38flash gemini35lite", code: "gemini38flash", ctx: 1000000,
+      chat: "gemini4argon gemini38flash gemini35lite", code: "gemini38flash", ctx: 1000000,
       volume: ["4 fois les limites de l'offre gratuite", "Jules et Antigravity avec des limites relevées"] },
     { id: "ultra", name: "Google AI Ultra", short: "AI Ultra", eur: 99.99, usd: 99.99,
-      chat: "gemini38flash gemini35lite", code: "gemini38flash", ctx: 1000000,
-      volume: ["5 fois les limites d'AI Pro", "Deep Think, non évalué", "Premiers servis pour Gemini 4 Argon, sans date"] },
+      chat: "gemini4argon gemini38flash gemini35lite", code: "gemini38flash", ctx: 1000000,
+      volume: ["5 fois les limites d'AI Pro", "Deep Think, non évalué"] },
     { id: "ultra20", hidden: true, name: "Google AI Ultra 20x", short: "Ultra 20x", eur: 219.99, usd: 199.99, same: "ultra",
       volume: ["20 fois les limites d'AI Pro"] }
   ],

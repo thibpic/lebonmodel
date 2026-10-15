@@ -12,9 +12,9 @@
   est  : score estimé par Artificial Analysis (pas de mesure complète)
 */
 window.LBM_BUDGET = {
-  updated: "2026-10-13",
-  updatedLabel: "13 octobre 2026",
-  fx: { usdToEur: 0.8938, vat: 0.2, date: "13 octobre 2026", source: "Banque centrale européenne" },
+  updated: "2026-10-14",
+  updatedLabel: "14 octobre 2026",
+  fx: { usdToEur: 0.8933, vat: 0.2, date: "14 octobre 2026", source: "Banque centrale européenne" },
 
   /* Éditeurs, noms et formes : assets/providers.js, partagé avec la page principale */
 
@@ -220,7 +220,7 @@ window.LBM_BUDGET = {
       id: "gemini4argon", provider: "google", name: "Gemini 4 Argon", short: "4 Argon",
       tier: "Haut de gamme", generation: "actuelle", released: "2026-09-30",
       price: { in: 2, cache: 0.1, out: 10 }, tok: 1, ctx: "1 M tokens",
-      apps: "API seulement : pas encore dans l'appli Gemini",
+      apps: "Appli Gemini dès AI Pro, API",
       levels: [
         { e: "high", idx: 53, task: 1.99, out: 62607, tps: 60 }
       ]
@@ -429,18 +429,18 @@ window.LBM_BUDGET = {
       { id: "max20", name: "Claude Max 20x", usd: 200, cap: Infinity, def: ["opus55", "medium"], codeDef: ["opus55", "medium"],
         chat: "fable51 opus55 sonnet55 haiku55 haiku45", code: "fable51 opus55 sonnet55 haiku55", codeLabel: "Claude Code" }
     ],
-    /* Google : prix TTC publiés en euros. Gemini 4 Argon n'est pas encore dans l'appli. */
+    /* Google : prix TTC publiés en euros. Gemini 4 Argon dans l'appli dès AI Pro depuis le 13 octobre 2026 (pas confirmé dans Jules ou Antigravity). */
     google: [
       { id: "free", name: "Gemini Gratuit", eur: 0, usd: 0, cap: 3, def: ["gemini35lite", "default"],
         chat: "gemini35lite", code: [] },
       { id: "plus", name: "Google AI Plus", eur: 4.99, usd: 4.99, cap: 6, def: ["gemini35lite", "default"],
         chat: "gemini35lite", code: [] },
       { id: "pro", name: "Google AI Pro", eur: 21.99, usd: 19.99, cap: 150, def: ["gemini38flash", "medium"], codeDef: ["gemini38flash", "medium"],
-        chat: "gemini38flash gemini35lite", code: "gemini38flash", codeLabel: "Jules ou Antigravity" },
+        chat: "gemini4argon gemini38flash gemini35lite", code: "gemini38flash", codeLabel: "Jules ou Antigravity" },
       { id: "ultra", name: "Google AI Ultra", eur: 99.99, usd: 99.99, cap: 800, def: ["gemini38flash", "medium"], codeDef: ["gemini38flash", "medium"],
-        chat: "gemini38flash gemini35lite", code: "gemini38flash", codeLabel: "Jules ou Antigravity" },
+        chat: "gemini4argon gemini38flash gemini35lite", code: "gemini38flash", codeLabel: "Jules ou Antigravity" },
       { id: "ultra20", name: "Google AI Ultra 20x", eur: 219.99, usd: 199.99, cap: Infinity, def: ["gemini38flash", "medium"], codeDef: ["gemini38flash", "medium"],
-        chat: "gemini38flash gemini35lite", code: "gemini38flash", codeLabel: "Jules ou Antigravity" }
+        chat: "gemini4argon gemini38flash gemini35lite", code: "gemini38flash", codeLabel: "Jules ou Antigravity" }
     ],
     /* Mistral : prix en dollars HT ; le modèle de chaque offre n'est pas publié (Medium 3.5 supposé) */
     mistral: [
