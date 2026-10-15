@@ -11,6 +11,9 @@ PHRASE_LIBRE = "off"
 # Modèle de la recherche via OpenRouter (identifiant OpenRouter ; ~ = alias vers la dernière version).
 # Vide, ou sans secret OPENROUTER_API_KEY : la recherche reste sur Claude Haiku 5.5 en direct.
 OPENROUTER_MODEL = "~typesafe/jev-latest"
+# API OpenRouter du modèle : "decisions" pour Jev (modèle de décision, /api/alpha/decisions),
+# vide pour un modèle de conversation (/api/v1/chat/completions).
+OPENROUTER_API = "decisions"
 
 # 8 demandes par minute et par adresse IP
 [[ratelimits]]
