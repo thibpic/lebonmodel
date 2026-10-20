@@ -12,9 +12,9 @@
   est  : score estimé par Artificial Analysis (pas de mesure complète)
 */
 window.LBM_BUDGET = {
-  updated: "2026-10-14",
-  updatedLabel: "14 octobre 2026",
-  fx: { usdToEur: 0.8933, vat: 0.2, date: "14 octobre 2026", source: "Banque centrale européenne" },
+  updated: "2026-10-19",
+  updatedLabel: "19 octobre 2026",
+  fx: { usdToEur: 0.8909, vat: 0.2, date: "19 octobre 2026", source: "Banque centrale européenne" },
 
   /* Éditeurs, noms et formes : assets/providers.js, partagé avec la page principale */
 
@@ -287,12 +287,12 @@ window.LBM_BUDGET = {
     /* ---------------- DeepSeek ---------------- */
     {
       id: "deepseekv41flash", provider: "deepseek", name: "DeepSeek V4.1 Flash", short: "V4.1 Flash",
-      tier: "Économique", generation: "actuelle", released: "2026-09-10",
+      tier: "Économique", generation: "actuelle", released: "2026-10-17",
       price: { in: 0.3, cache: 0.006, out: 1.2 }, tok: 1, ctx: "1 M tokens",
       apps: "API ; l'appli DeepSeek utilise un modèle Flash proche",
       levels: [
-        { e: "max", idx: 39, task: 0.27, out: 142288, tps: 208.4 },
-        { e: "none", idx: 25, task: 0.15, out: 25612, tps: 215.8 }
+        { e: "max", idx: 45, task: 0.26, out: 137018, tps: 224.7 },
+        { e: "none", idx: 25, task: 0.22, out: 37564, tps: 369 }
       ]
     },
     {
@@ -302,7 +302,7 @@ window.LBM_BUDGET = {
       apps: "Appli DeepSeek gratuite (mode Expert), API",
       levels: [
         { e: "max", idx: 36, task: 0.67, out: 91064, tps: 93 },
-        { e: "none", idx: 20, task: 0.46, out: 22766, tps: 94.6 }
+        { e: "none", idx: 20, task: 0.369, out: 18262, tps: 105 }
       ]
     },
     /* ---------------- Meta ---------------- */
