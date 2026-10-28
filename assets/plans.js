@@ -1,6 +1,7 @@
 /*
   lebonmodel, abonnements (vérifiés le 6 octobre 2026, Haiku 5.5 ajouté le 10 octobre 2026,
-  Google, Mistral, xAI et DeepSeek ajoutés le 12 octobre 2026)
+  Google, Mistral, xAI et DeepSeek ajoutés le 12 octobre 2026,
+  GPT-6.1 Terra dans Work et Codex dès Plus le 28 octobre 2026)
   ---------------------------------------------------------------
   chat / work / code : réglages accessibles dans la conversation, l'agent de travail
   (ChatGPT Work) et l'agent de code (Codex, Claude Code).
@@ -12,7 +13,7 @@
   reprennent uniquement ce que les éditeurs publient.
   Un éditeur sans entrée ici (Meta, Alibaba) se compare à l'API seulement.
 */
-window.LBM_FX = { usdToEur: 0.8909, vat: 0.2, date: "19 octobre 2026" };
+window.LBM_FX = { usdToEur: 0.8938, vat: 0.2, date: "26 octobre 2026" };
 
 window.LBM_PLANS = {
   openai: [
@@ -28,14 +29,14 @@ window.LBM_PLANS = {
       volume: ["Instant illimité", "Think limité, sans chiffre publié", "80 fichiers par 3 h"] },
     { id: "plus", name: "ChatGPT Plus", short: "Plus", eur: 23, usd: 20,
       chat: [["gpt56sol", "none", "Instant"], ["gpt56sol", "medium", "Medium"], ["gpt56sol", "high", "High"]],
-      work: "gpt6astra gpt61sol gpt6luna gpt56sol gpt56terra gpt56luna",
-      code: "gpt6astra gpt61sol gpt6luna gpt56sol gpt56terra gpt56luna",
+      work: "gpt6astra gpt61sol gpt61terra gpt6luna gpt56sol gpt56terra gpt56luna",
+      code: "gpt6astra gpt61sol gpt61terra gpt6luna gpt56sol gpt56terra gpt56luna",
       ctx: { instant: 54000, think: 256000 },
       volume: ["Instant illimité", "Medium et High plafonnés, sans chiffre publié", "Work et Codex : 15 à 160 messages par 5 h avec GPT-6.1 Sol, 5 à 45 avec Astra", "Agent : 40 tâches par mois"] },
     { id: "pro", name: "ChatGPT Pro", short: "Pro", eur: 103, usd: 100, priceNote: "de 103 à 510 € selon le volume",
       chat: [["gpt56sol", "none", "Instant"], ["gpt56sol", "medium", "Medium"], ["gpt56sol", "high", "High"], ["gpt56sol", "xhigh", "Extra High"], ["gpt6astra", "max", "Pro"]],
-      work: "gpt6astra gpt61sol gpt6luna gpt56sol gpt56terra gpt56luna",
-      code: "gpt6astra gpt61sol gpt6luna gpt56sol gpt56terra gpt56luna",
+      work: "gpt6astra gpt61sol gpt61terra gpt6luna gpt56sol gpt56terra gpt56luna",
+      code: "gpt6astra gpt61sol gpt61terra gpt6luna gpt56sol gpt56terra gpt56luna",
       ctx: { instant: 128000, think: 400000 },
       volume: ["Pas de limite par 5 h dans Work et Codex", "Mode Pro plafonné, sans chiffre publié", "Agent : 400 tâches par mois"] },
     { id: "pro200", hidden: true, name: "ChatGPT Pro 200", short: "Pro 200", eur: 229, usd: 200, same: "pro",
@@ -44,8 +45,8 @@ window.LBM_PLANS = {
       volume: ["25 fois le volume de Plus", "Astra en mode Ultrafast"] },
     { id: "business", name: "ChatGPT Business", short: "Business", eur: 26, usd: 25, perSeat: true, priceNote: "par personne, 21 € en annuel",
       chat: [["gpt56sol", "none", "Instant"], ["gpt56sol", "medium", "Medium"], ["gpt56sol", "high", "High"], ["gpt56sol", "xhigh", "Extra High"], ["gpt6astra", "max", "Pro"]],
-      work: "gpt6astra gpt61sol gpt6luna gpt56sol gpt56terra gpt56luna",
-      code: "gpt6astra gpt61sol gpt6luna gpt56sol gpt56terra gpt56luna",
+      work: "gpt6astra gpt61sol gpt61terra gpt6luna gpt56sol gpt56terra gpt56luna",
+      code: "gpt6astra gpt61sol gpt61terra gpt6luna gpt56sol gpt56terra gpt56luna",
       ctx: { instant: 54000, think: 256000 },
       volume: ["Instant quasi illimité", "15 messages Pro par mois", "Work et Codex : 15 à 150 messages par 5 h avec GPT-6.1 Sol"] }
   ],
