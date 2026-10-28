@@ -12,9 +12,9 @@
   est  : score estimé par Artificial Analysis (pas de mesure complète)
 */
 window.LBM_BUDGET = {
-  updated: "2026-10-19",
-  updatedLabel: "19 octobre 2026",
-  fx: { usdToEur: 0.8909, vat: 0.2, date: "19 octobre 2026", source: "Banque centrale européenne" },
+  updated: "2026-10-28",
+  updatedLabel: "28 octobre 2026",
+  fx: { usdToEur: 0.8938, vat: 0.2, date: "26 octobre 2026", source: "Banque centrale européenne" },
 
   /* Éditeurs, noms et formes : assets/providers.js, partagé avec la page principale */
 
@@ -91,6 +91,20 @@ window.LBM_BUDGET = {
         { e: "high", idx: 50.2, task: 0.3191, out: 13192, tps: 53.2 },
         { e: "xhigh", idx: 51.0, task: 0.3929, out: 17619, tps: 59.4 },
         { e: "max", idx: 51.8, task: 0.7242, out: 38128, tps: 58.3 }
+      ]
+    },
+    {
+      id: "gpt61terra", provider: "openai", name: "GPT-6.1 Terra", short: "6.1 Terra",
+      tier: "Intermédiaire", generation: "actuelle", released: "2026-10-26",
+      price: { in: 1, cache: 0.05, out: 5 }, tok: 1, ctx: "1 M tokens",
+      apps: "Work et Codex dès ChatGPT Plus, API",
+      levels: [
+        { e: "none", idx: 33, task: 0.11, out: 7474, tps: 90.9 },
+        { e: "low", idx: 36, task: 0.05, out: 3041, tps: 90.9 },
+        { e: "medium", idx: 41, task: 0.1, out: 7553, tps: 90.9 },
+        { e: "high", idx: 44, task: 0.13, out: 10749, tps: 90.9 },
+        { e: "xhigh", idx: 45, task: 0.19, out: 17041, tps: 90.9 },
+        { e: "max", idx: 48, task: 0.4, out: 42119, tps: 90.9 }
       ]
     },
     {
@@ -408,16 +422,16 @@ window.LBM_BUDGET = {
         chat: [["gpt56luna", "none", "Instant"], ["gpt56luna", "medium", "Think"]], code: [] },
       { id: "plus", name: "ChatGPT Plus", eur: 23, usd: 20, cap: 150, def: ["gpt56sol", "none"], codeDef: ["gpt61sol", "medium"],
         chat: [["gpt56sol", "none", "Instant"], ["gpt56sol", "medium", "Thinking Medium"], ["gpt56sol", "high", "Thinking High"]],
-        code: "gpt6astra gpt61sol gpt6luna", codeLabel: "Work ou Codex" },
+        code: "gpt6astra gpt61sol gpt61terra gpt6luna", codeLabel: "Work ou Codex" },
       { id: "pro100", name: "ChatGPT Pro", eur: 103, usd: 100, cap: 800, def: ["gpt56sol", "none"], codeDef: ["gpt61sol", "medium"],
         chat: [["gpt56sol", "none", "Instant"], ["gpt56sol", "medium", "Thinking Medium"], ["gpt56sol", "high", "Thinking High"], ["gpt56sol", "xhigh", "Thinking Extra High"], ["gpt6astra", "max", "Pro"]],
-        code: "gpt6astra gpt61sol gpt6luna", codeLabel: "Work ou Codex" },
+        code: "gpt6astra gpt61sol gpt61terra gpt6luna", codeLabel: "Work ou Codex" },
       { id: "pro200", name: "ChatGPT Pro 200", eur: 229, usd: 200, cap: 2500, def: ["gpt56sol", "none"], codeDef: ["gpt61sol", "medium"],
         chat: [["gpt56sol", "none", "Instant"], ["gpt56sol", "medium", "Thinking Medium"], ["gpt56sol", "high", "Thinking High"], ["gpt56sol", "xhigh", "Thinking Extra High"], ["gpt6astra", "max", "Pro"]],
-        code: "gpt6astra gpt61sol gpt6luna", codeLabel: "Work ou Codex" },
+        code: "gpt6astra gpt61sol gpt61terra gpt6luna", codeLabel: "Work ou Codex" },
       { id: "pro500", name: "ChatGPT Pro 500", eur: 510, usd: 500, cap: Infinity, def: ["gpt56sol", "none"], codeDef: ["gpt61sol", "medium"],
         chat: [["gpt56sol", "none", "Instant"], ["gpt56sol", "medium", "Thinking Medium"], ["gpt56sol", "high", "Thinking High"], ["gpt56sol", "xhigh", "Thinking Extra High"], ["gpt6astra", "max", "Pro"]],
-        code: "gpt6astra gpt61sol gpt6luna", codeLabel: "Work ou Codex" }
+        code: "gpt6astra gpt61sol gpt61terra gpt6luna", codeLabel: "Work ou Codex" }
     ],
     anthropic: [
       { id: "free", name: "Claude Gratuit", usd: 0, cap: 3, def: ["sonnet55", "medium"],
